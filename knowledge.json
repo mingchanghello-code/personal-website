@@ -1,0 +1,96 @@
+{
+  "updated": "October 2026",
+  "source": "Profile provided by Ming Chang",
+  "facts": [
+    {
+      "id": "about",
+      "title": "About Ming",
+      "text": "Ming Chang is a product manager at Meta, based in the San Francisco Bay Area. He grew up in Beijing, studied mathematics at Peking University, and earned a master's in Statistics at Columbia. He moved to the Bay Area in 2013 and began his career at Google as a data scientist before moving into product management."
+    },
+    {
+      "id": "work",
+      "title": "Products",
+      "text": "At Meta, Ming leads products for experimentation and launching changes safely. Recent work includes Experiment Lab, an AI-native platform that helps teams plan experiments and evaluate results, and Standard Launch Workflow, a standard path for launching products across Meta. He previously worked on Facebook notifications and LinkedIn's Services Marketplace."
+    },
+    {
+      "id": "travel",
+      "title": "Places and time off",
+      "text": "Ming grew up in Beijing, studied in New York, and moved to the Bay Area in 2013. He values proper time off: during his last vacation, he forgot he had a job. He hasn't shared the destination or a travel itinerary."
+    },
+    {
+      "id": "contact",
+      "title": "Contact",
+      "text": "You can email Ming at mingchang.hello@gmail.com or find him on LinkedIn at linkedin.com/in/mingchanghello."
+    },
+    {
+      "id": "interests",
+      "title": "Outside work",
+      "text": "Ming enjoys regular exercise, especially swimming, to clear his head. He also values writing to make complicated ideas simple, talking directly with users, and taking proper vacations without checking Slack."
+    },
+    {
+      "id": "education",
+      "title": "Education",
+      "text": "Ming earned a B.S. in Mathematics at Peking University, then an M.A. in Statistics at Columbia University in New York."
+    },
+    {
+      "id": "career",
+      "title": "Career history",
+      "text": "Ming's career: Google, Senior Product Analyst (Sep 2013–Jul 2018); DiDi, Data Scientist (Jul 2018–Oct 2020); Fast, Product Manager (Mar–Dec 2021); LinkedIn, Product Manager (Dec 2021–Jan 2024); and Meta (Jan 2024–present). At Meta he has worked on Facebook Notifications and now leads the Experimentation Platform. His move from data science into PM was inspired by the product managers he worked with at Google."
+    },
+    {
+      "id": "philosophy",
+      "title": "Working philosophy",
+      "text": "Ming likes products that solve real problems, tackle technical complexity, and keep him close to users. He favors making a reasonable bet and learning over weeks of indecision. He writes to clarify his thinking, values teammates who care about the outcome, and makes room for exercise and real time off."
+    },
+    {
+      "id": "meta",
+      "title": "Meta: experimentation platform",
+      "text": "Ming joined Meta in January 2024. As Lead Product Manager for the Experimentation Platform, he built an AI-native product where agents help teams plan and review their work, with adoption by a major organization of 7,000 employees. He also built developer tooling for safe launches, scaling it to Meta-wide adoption. In 2026 he has made 400+ production code changes, prototyping and shipping alongside engineering. He defined the strategy and formed a cross-organization team across platform and workflow owners. The adopting organization represents $100B in annual revenue. He was recognized within Meta’s product organization and invited to a VP-level AI roundtable to share his AI-native development practices. Exact bad-launch reduction metrics were not provided."
+    },
+    {
+      "id": "notifications",
+      "title": "Facebook Notifications",
+      "text": "At Facebook, Ming defined a two-year strategy for social-graph notifications, introduced LLM-based content understanding into ranking, and unified ranking across push, notification center, and tab badges. His focus was helping people discover relevant content while respecting their attention. Exact engagement and volume improvements weren't supplied in his profile."
+    },
+    {
+      "id": "linkedin",
+      "title": "LinkedIn Services Marketplace",
+      "text": "At LinkedIn (December 2021–January 2024), Ming led product strategy and growth for the Services Marketplace, connecting people with professionals such as career coaches, designers, and consultants. Transaction volume grew 1.7×."
+    },
+    {
+      "id": "google",
+      "title": "Google Play payments",
+      "text": "At Google (September 2013–July 2018), Ming supported Google Play's global payments business as a Senior Product Analyst, using experimentation and behavioral data to improve checkout conversion and payment success internationally."
+    },
+    {
+      "id": "didi",
+      "title": "DiDi fintech",
+      "text": "At DiDi (July 2018–October 2020), Ming was a data scientist supporting Latin America expansion, payment conversion, local payment methods, and fintech initiatives including DiDi Pay."
+    },
+    {
+      "id": "fast",
+      "title": "Fast payments",
+      "text": "At Fast (March–December 2021), Ming was a product manager leading core payment-processing capabilities for the payments platform."
+    },
+    {
+      "id": "complexity",
+      "title": "Product principles",
+      "text": "Ming enjoys logical and analytical problem-solving: messy technical problems that can be broken down and worked through. He values direct conversations with users from different backgrounds. Given the choice, he would rather build for 10,000 users he can talk to than for a billion represented only as personas or dashboard numbers."
+    },
+    {
+      "id": "writing",
+      "title": "Writing and clear thinking",
+      "text": "Ming sees making complicated things simple as a PM superpower. When priorities become unclear, he writes a short essay explaining what matters, what doesn't, and why. He still writes these himself because figuring out what he wants to say is part of the thinking, and aims to make them worthwhile for readers."
+    },
+    {
+      "id": "teams",
+      "title": "Working with people",
+      "text": "Ming values teammates who care about what they build. He believes those people push one another and hold each other accountable, making disagreements less personal because they share an outcome. He sometimes takes responsibility for addressing situations where people who consistently don't care slow down a team."
+    },
+    {
+      "id": "speed",
+      "title": "Making product decisions",
+      "text": "Ming optimizes for speed over perfect accuracy when decisions are reversible. He views product decisions as bets with risk and prefers making a reasonable bet, learning, and continuing over weeks of debate where no one makes the call."
+    }
+  ]
+}

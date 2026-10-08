@@ -1,0 +1,25 @@
+# Paid service and disk; review Render's pricing before creating the Blueprint.
+services:
+  - type: web
+    name: ming-personal-website
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: npm run check && npm test && npm run build
+    startCommand: node server.js
+    healthCheckPath: /api/places
+    autoDeployTrigger: commit
+    disk:
+      name: places-data
+      mountPath: /var/data/ming
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MING_SITE_DATA_DIR
+        value: /var/data/ming
+      - key: MING_SITE_EDIT_PROTECTED
+        value: "false"
+      - key: MING_AI_KEY
+        sync: false

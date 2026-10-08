@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Ming Chang — product manager at Meta. Products, experience, and how I think about work.">
+  <meta name="theme-color" content="#000000">
+  <title>Ming Chang — Product management · Meta</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <aside class="sidebar" aria-label="Site navigation">
+    <div class="sidebar-top"><a class="brand" href="#home" aria-label="Ming Chang — Home">MC</a></div>
+    <nav aria-label="Main navigation">
+      <a href="#home" class="active" data-section="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></svg>Home</a>
+      <a href="#about" data-section="about"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>About me</a>
+      <a href="#work" data-section="work"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V3h8v4M3 12h18M10 12v3h4v-3"/></svg>Work</a>
+      <a href="#travel" data-section="travel"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z"/></svg>Life</a>
+      <a href="#notes" data-section="notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11l3 3v15H4V3h2ZM16 3v5h4M8 12h8M8 16h6"/></svg>Writing</a>
+    </nav>
+    <div class="sidebar-links"><a href="https://www.linkedin.com/in/mingchanghello/" target="_blank" rel="noopener noreferrer">LinkedIn <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></a><a href="mailto:mingchang.hello@gmail.com">Say hello <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></a></div>
+    <div class="sidebar-bottom"><span>© <span id="year">2026</span> Ming Chang</span></div>
+  </aside>
+  <main id="main">
+    <div class="content" id="content" tabindex="-1"></div>
+  <aside class="chat-panel" id="chat-panel" aria-labelledby="chat-title">
+    <header class="chat-heading"><div class="chat-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Z"/></svg><strong id="chat-title">A conversation about Ming</strong></div><div class="chat-header-actions"><button id="chat-reset" class="icon-button" aria-label="Start a new conversation" title="New conversation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button id="chat-close" class="icon-button" aria-label="Minimize conversation" title="Minimize conversation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button></div></header>
+    <div id="messages" class="messages" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions text"></div>
+    <div class="chat-composer"><div class="suggestions" id="chat-suggestions"><button data-question="Tell me about Ming's professional background">The short version <span><svg class="arrow-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span></button><button data-question="What is Ming working on at Meta?">What are you building? <span><svg class="arrow-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span></button><button data-question="How does Ming approach product decisions?">How do you think about product? <span><svg class="arrow-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span></button></div><form id="chat-form"><label class="sr-only" for="question">Ask a question about Ming</label><textarea id="question" placeholder="Ask about Ming’s work, experience, or perspective…" rows="2" maxlength="1000" required></textarea><div class="composer-bottom"><span id="chat-status" role="status">Answers from my public profile</span><div class="composer-actions"><button type="button" id="chat-resume" class="resume-button" hidden>View conversation</button><button type="submit" aria-label="Send question" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V4m-6 6 6-6 6 6"/></svg></button></div></div></form><p class="chat-footnote">AI-assisted · Grounded in Ming’s public profile</p></div>
+  </aside>
+
+  </main>
+  <button class="chat-backdrop" id="chat-backdrop" aria-label="Close conversation" tabindex="-1"></button>
+  <button type="button" class="selection-ask" id="selection-ask" aria-controls="question" hidden>Ask AI</button>
+  <script src="/app.js"></script>
+</body>
+</html>
