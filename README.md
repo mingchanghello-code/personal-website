@@ -18,6 +18,8 @@ You can also open `index.html` directly to browse the styled website without a s
 
 Life has three expandable sections: Places, Hobbies, and Self-reflection. Places follows the entry in view with a timeline and an orthographic globe. Hobbies and Self-reflection remain TBD. Initial places come from `places.seed.json`; unspecified dates remain blank.
 
+Places and the timeline show the newest start date first. Undated entries appear afterward in their saved order. Date ranges can overlap: a home marked Present remains ongoing while a trip is recorded separately. Each entry independently selects its location on the globe.
+
 Open Places → Edit places to edit directly. Password protection is disabled for this initial version; anyone with the website link can add, update, or remove entries.
 
 To restore password protection later, set `MING_SITE_EDIT_PROTECTED=true` on the server. In protected mode, the server uses `MING_SITE_EDIT_KEY` when supplied, or generates a private password in `.data/owner-key.txt`. The password is never included in the website or public API. Sessions expire after eight hours and end with Done editing or a server restart. An HttpOnly, SameSite cookie is used normally; embedded previews can use a session token kept only in page memory when cookies are blocked.

@@ -1,6 +1,11 @@
 // An in-memory session also works in embedded previews that block third-party cookies.
 // It is never persisted to browser storage or included in generated HTML.
 let lifeOwnerToken = null;
+function sortLifePlaces(places) {
+  // Sort by arrival, so an ongoing home can coexist with more recent trips.
+  // Keep undated entries after dated ones, preserving their saved order.
+  return [...places].sort((a, b) => (b.start || '').localeCompare(a.start || ''));
+}
 function mountLife(root) {
   const controller = new AbortController();
   const signal = controller.signal;
@@ -22,7 +27,7 @@ function mountLife(root) {
   const projection = d3.geoOrthographic().translate([140, 140]).scale(119).clipAngle(90);
   const geoPath = d3.geoPath(projection);
   const grid = d3.geoGraticule().step([45, 30])();
-  let places = LIFE_DEFAULT_PLACES.map(place => ({ ...place }));
+  let places = sortLifePlaces(LIFE_DEFAULT_PLACES.map(place => ({ ...place })));
   let revision = null;
   let editing = false;
   let requiresPassword = false;
@@ -195,15 +200,15 @@ function mountLife(root) {
   async function loadPlaces() {
     const result = await request('');
     if (signal.aborted) return;
-    places = result.places; revision = result.revision; renderPlaces();
+    places = sortLifePlaces(result.places); revision = result.revision; renderPlaces();
   }
   async function savePlaces(next) {
     if (saving) return;
     saving = true;
     for (const button of root.querySelectorAll('.place-form-actions button, .place-entry-actions button, .places-toolbar button')) button.disabled = true;
     try {
-      const result = await request('', 'PUT', { places: next, revision });
-      places = result.places; revision = result.revision; renderPlaces();
+      const result = await request('', 'PUT', { places: sortLifePlaces(next), revision });
+      places = sortLifePlaces(result.places); revision = result.revision; renderPlaces();
     } catch (error) {
       if (error.status === 401) { editing = false; renderPlaces(); }
       if (error.status === 409) await loadPlaces();
@@ -353,11 +358,8 @@ function mountLife(root) {
     };
     if (place.start && place.end && place.end < place.start) { message($('#place-form-status'), 'The end date must be after the start date.'); return; }
     const next = editingId ? places.map(item => item.id === editingId ? place : item) : [...places, place];
-    // Keep undated entries in their existing positions; sort the dated slots chronologically.
-    const dated = next.filter(item => item.start).sort((a, b) => a.start.localeCompare(b.start));
-    let index = 0; const ordered = next.map(item => item.start ? dated[index++] : item);
     try {
-      await savePlaces(ordered); closeEditor(); message($('#places-status'), 'Saved.');
+      await savePlaces(next); closeEditor(); message($('#places-status'), 'Saved.');
       jumpTo(place.id);
     } catch (error) { message($('#place-form-status'), error.message); }
   });
