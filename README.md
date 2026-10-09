@@ -24,6 +24,12 @@ Each place can have up to five optional highlights, shown as simple bullet point
 
 Place headings automatically show the country's flag emoji. Location search supplies the country; pins chosen manually and older entries use reverse lookup through Photon. The initial Beijing, New York, and Bay Area coordinates have built-in country information. Flags are omitted when the lookup cannot determine a country, and remain separate from the site's monochrome icons.
 
+The Places overview counts distinct countries and places; repeated visits count once. Nearby entries with the same location name count as one place. Countries show a `+` when some locations have not resolved yet. Estimated miles sum great-circle distances between dated entries in arrival order, including repeated visits; they do not infer transport routes or unrecorded return trips. Undated entries are excluded from mileage.
+
+Visitors can rotate the globe by dragging or with arrow keys. Enter or Escape returns to the selected place. Clicking a timeline entry or scrolling to a different entry recenters the globe. Manual location picking still requires entering the place editor.
+
+A static monochrome world map beneath the stats marks each distinct place. It updates when entries change and does not pan or zoom.
+
 Open Places → Edit places to edit directly. Password protection is disabled for this initial version; anyone with the website link can add, update, or remove entries.
 
 To restore password protection later, set `MING_SITE_EDIT_PROTECTED=true` on the server. In protected mode, the server uses `MING_SITE_EDIT_KEY` when supplied, or generates a private password in `.data/owner-key.txt`. The password is never included in the website or public API. Sessions expire after eight hours and end with Done editing or a server restart. An HttpOnly, SameSite cookie is used normally; embedded previews can use a session token kept only in page memory when cookies are blocked.

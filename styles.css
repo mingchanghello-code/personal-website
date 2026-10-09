@@ -351,6 +351,16 @@ button:disabled { opacity: 1; }
 .life-category > summary h2 { margin: 0; font-size: 18px; font-weight: 550; }
 .life-category-body { padding: 0 20px 20px; }
 .life-tbd p { margin: 0; font-size: 13px; }
+.places-overview { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; margin-bottom: 26px; }
+.places-stats { display: flex; gap: clamp(22px, 4vw, 42px); margin: 0; }
+.places-stats > div { display: flex; flex-direction: column-reverse; gap: 3px; }
+.places-stats dt { font-size: 11px; }
+.places-stats dd { margin: 0; font-size: 23px; font-weight: 550; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.places-overview .places-toolbar { margin: 0; }
+.places-map { margin: 0 0 30px; }
+.places-map svg { display: block; width: 100%; height: auto; aspect-ratio: 960 / 400; max-height: 290px; }
+.places-map-land { fill: #fff; stroke: #000; stroke-width: 1; stroke-linejoin: round; }
+.places-map-pins path { fill: #000; stroke: #fff; stroke-width: 1; transform: scale(1.4); transform-origin: 0 0; }
 .places-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 22px; }
 .places-toolbar button, .place-entry-actions button, .place-form-actions button, .location-search button, .place-location-actions button { border: 1px solid #000; border-radius: 5px; background: #fff; color: #000; padding: 6px 10px; font-size: 12px; }
 .places-toolbar button:hover, .place-entry-actions button:hover, .place-form-actions button:hover, .location-search button:hover, .place-location-actions button:hover { text-decoration: underline; }
@@ -365,7 +375,9 @@ button:disabled { opacity: 1; }
 .globe-pin { fill: #000; stroke: #fff; stroke-width: 1.4; }
 .globe-pin-dot { fill: #fff; stroke: none; }
 .globe-other-pin { fill: #fff; stroke: #000; stroke-width: 1; }
-#life-globe.picking { cursor: crosshair; touch-action: none; outline: 1px dashed #000; outline-offset: -8px; }
+#life-globe { cursor: grab; touch-action: none; }
+#life-globe.grabbing { cursor: grabbing; }
+#life-globe.picking { cursor: crosshair; outline: 1px dashed #000; outline-offset: -8px; }
 #life-globe:focus-visible { outline: 2px solid #000; }
 .place-globe figcaption { min-height: 46px; }
 .place-globe figcaption strong { display: block; font-size: 14px; font-weight: 550; }
@@ -454,6 +466,11 @@ button:disabled { opacity: 1; }
   .place-entry .place-description { font-size: 13px; }
   .place-date-fields { gap: 8px; }
   .place-editor, .places-login { padding: 14px; }
+  .places-stats { width: 100%; justify-content: space-between; gap: 12px; }
+  .places-stats dd { font-size: 21px; }
+  .places-overview .places-toolbar { width: 100%; }
+  .places-map { margin-bottom: 22px; }
+  .places-map-pins path { transform: scale(2.2); }
 }
 
 .sidebar .brand { font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: 0; }

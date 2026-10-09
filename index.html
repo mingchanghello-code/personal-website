@@ -359,6 +359,16 @@ button:disabled { opacity: 1; }
 .life-category > summary h2 { margin: 0; font-size: 18px; font-weight: 550; }
 .life-category-body { padding: 0 20px 20px; }
 .life-tbd p { margin: 0; font-size: 13px; }
+.places-overview { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; margin-bottom: 26px; }
+.places-stats { display: flex; gap: clamp(22px, 4vw, 42px); margin: 0; }
+.places-stats > div { display: flex; flex-direction: column-reverse; gap: 3px; }
+.places-stats dt { font-size: 11px; }
+.places-stats dd { margin: 0; font-size: 23px; font-weight: 550; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.places-overview .places-toolbar { margin: 0; }
+.places-map { margin: 0 0 30px; }
+.places-map svg { display: block; width: 100%; height: auto; aspect-ratio: 960 / 400; max-height: 290px; }
+.places-map-land { fill: #fff; stroke: #000; stroke-width: 1; stroke-linejoin: round; }
+.places-map-pins path { fill: #000; stroke: #fff; stroke-width: 1; transform: scale(1.4); transform-origin: 0 0; }
 .places-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 22px; }
 .places-toolbar button, .place-entry-actions button, .place-form-actions button, .location-search button, .place-location-actions button { border: 1px solid #000; border-radius: 5px; background: #fff; color: #000; padding: 6px 10px; font-size: 12px; }
 .places-toolbar button:hover, .place-entry-actions button:hover, .place-form-actions button:hover, .location-search button:hover, .place-location-actions button:hover { text-decoration: underline; }
@@ -373,7 +383,9 @@ button:disabled { opacity: 1; }
 .globe-pin { fill: #000; stroke: #fff; stroke-width: 1.4; }
 .globe-pin-dot { fill: #fff; stroke: none; }
 .globe-other-pin { fill: #fff; stroke: #000; stroke-width: 1; }
-#life-globe.picking { cursor: crosshair; touch-action: none; outline: 1px dashed #000; outline-offset: -8px; }
+#life-globe { cursor: grab; touch-action: none; }
+#life-globe.grabbing { cursor: grabbing; }
+#life-globe.picking { cursor: crosshair; outline: 1px dashed #000; outline-offset: -8px; }
 #life-globe:focus-visible { outline: 2px solid #000; }
 .place-globe figcaption { min-height: 46px; }
 .place-globe figcaption strong { display: block; font-size: 14px; font-weight: 550; }
@@ -462,6 +474,11 @@ button:disabled { opacity: 1; }
   .place-entry .place-description { font-size: 13px; }
   .place-date-fields { gap: 8px; }
   .place-editor, .places-login { padding: 14px; }
+  .places-stats { width: 100%; justify-content: space-between; gap: 12px; }
+  .places-stats dd { font-size: 21px; }
+  .places-overview .places-toolbar { width: 100%; }
+  .places-map { margin-bottom: 22px; }
+  .places-map-pins path { transform: scale(2.2); }
 }
 
 .sidebar .brand { font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: 0; }
@@ -579,6 +596,22 @@ function sortLifePlaces(places) {
   // Keep undated entries after dated ones, preserving their saved order.
   return [...places].sort((a, b) => (b.start || '').localeCompare(a.start || ''));
 }
+function lifeDistinctPlaces(places) {
+  const distance = (a, b) => d3.geoDistance([a.lon, a.lat], [b.lon, b.lat]) * 3958.7613;
+  const name = place => place.name.split(',')[0].normalize('NFKD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const distinct = [];
+  for (const place of places) {
+    if (!distinct.some(other => distance(place, other) < 0.1 || name(place) === name(other) && distance(place, other) < 25)) distinct.push(place);
+  }
+  return distinct;
+}
+function lifeTravelStats(places) {
+  const distance = (a, b) => d3.geoDistance([a.lon, a.lat], [b.lon, b.lat]) * 3958.7613;
+  const dated = places.filter(place => place.start).sort((a, b) => a.start.localeCompare(b.start));
+  const miles = dated.reduce((total, place, index) => total + (index ? distance(dated[index - 1], place) : 0), 0);
+  const countries = new Set(places.map(place => place.country).filter(Boolean));
+  return { places: lifeDistinctPlaces(places).length, countries: countries.size, unresolvedCountries: places.some(place => !place.country), miles: Math.round(miles) };
+}
 function mountLife(root) {
   const controller = new AbortController();
   const signal = controller.signal;
@@ -594,6 +627,9 @@ function mountLife(root) {
   const entries = $('#places-entries');
   const timeline = $('#places-timeline');
   const globe = $('#life-globe');
+  const worldMap = $('#places-world-map');
+  const mapProjection = d3.geoNaturalEarth1().fitExtent([[16, 10], [944, 382]], { type: 'Sphere' });
+  const mapPath = d3.geoPath(mapProjection);
   const editor = $('#place-editor');
   const highlightFields = $('#place-highlight-fields');
   const addHighlight = $('#place-highlight-add');
@@ -612,8 +648,9 @@ function mountLife(root) {
   let preview = null;
   let picking = false;
   let drag = null;
+  let freeRotation = false;
   let activeId = places[0]?.id;
-  let rotation = [-places[0].lon, -places[0].lat, 0];
+  let rotation = [-(places[0]?.lon || 0), -(places[0]?.lat || 0), 0];
   let animation = null;
   let syncFrame = null;
   const countryLookups = new Map();
@@ -637,11 +674,35 @@ function mountLife(root) {
     countryFor(place).then(country => {
       if (!country || !/^[A-Z]{2}$/.test(country) || signal.aborted || !heading.isConnected) return;
       place.country = country;
+      updateStats();
       const flag = node('span', 'place-flag', String.fromCodePoint(...[...country].map(letter => 127397 + letter.charCodeAt(0))));
       flag.setAttribute('role', 'img');
       flag.setAttribute('aria-label', `${new Intl.DisplayNames(['en'], { type: 'region' }).of(country)} flag`);
       heading.append(flag);
     });
+  }
+
+  function updateStats() {
+    const stats = lifeTravelStats(places);
+    $('#places-country-count').textContent = `${stats.countries}${stats.unresolvedCountries ? '+' : ''}`;
+    $('#places-country-count').title = stats.unresolvedCountries ? 'Known countries; some locations have not resolved a country yet.' : 'Distinct countries in these entries.';
+    $('#places-location-count').textContent = stats.places.toLocaleString('en-US');
+    $('#places-mile-count').textContent = stats.miles.toLocaleString('en-US');
+  }
+  function renderMap() {
+    worldMap.querySelector('.places-map-land').setAttribute('d', mapPath(LIFE_LAND));
+    const pins = worldMap.querySelector('.places-map-pins'); pins.replaceChildren();
+    const distinct = lifeDistinctPlaces(places);
+    worldMap.setAttribute('aria-label', `World map showing ${distinct.length} recorded places.`);
+    for (const place of distinct) {
+      const [x, y] = mapProjection([place.lon, place.lat]);
+      const pin = document.createElementNS(worldMap.namespaceURI, 'g');
+      pin.setAttribute('transform', `translate(${x},${y})`); pin.dataset.place = place.id;
+      const marker = document.createElementNS(worldMap.namespaceURI, 'path');
+      marker.setAttribute('d', 'M0 0C-2-3-4-5-4-8a4 4 0 0 1 8 0C4-5 2-3 0 0Z');
+      const label = document.createElementNS(worldMap.namespaceURI, 'title'); label.textContent = place.name;
+      pin.append(label, marker); pins.append(pin);
+    }
   }
 
   function message(element, text = '') { if (!element || signal.aborted) return; element.textContent = text; element.hidden = !text; }
@@ -711,12 +772,18 @@ function mountLife(root) {
     }
   }
   function turnTo(place, animate = true) {
-    if (!place) { drawGlobe(); return; }
     if (animation !== null) cancelAnimationFrame(animation);
     animation = null;
+    freeRotation = false;
+    if (!place) {
+      $('#globe-place').textContent = ''; $('#globe-dates').textContent = '';
+      delete globe.dataset.place;
+      globe.setAttribute('aria-label', 'Globe. Drag or use arrow keys to rotate.');
+      drawGlobe(); return;
+    }
     $('#globe-place').textContent = place.name;
     $('#globe-dates').textContent = period(place);
-    globe.setAttribute('aria-label', `Globe showing ${place.name}`);
+    globe.setAttribute('aria-label', `Globe focused on ${place.name}. Drag or use arrow keys to rotate; Enter returns to this place.`);
     globe.dataset.place = place.id || 'preview';
     const destination = [-place.lon, -place.lat, 0];
     const from = [...rotation];
@@ -731,14 +798,14 @@ function mountLife(root) {
     };
     animation = requestAnimationFrame(frame);
   }
-  function setActive(id, animate = true) {
+  function setActive(id, animate = true, recenter = false) {
     const changed = id !== activeId;
     activeId = id;
     for (const button of timeline.querySelectorAll('button')) {
       if (button.dataset.place === id) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current');
     }
     for (const entry of entries.children) entry.classList.toggle('current-place', entry.dataset.place === id);
-    if (!preview && !picking && (changed || !globe.dataset.place)) turnTo(places.find(place => place.id === id), animate);
+    if (!preview && !picking && !drag && (changed || recenter || !globe.dataset.place && !freeRotation)) turnTo(places.find(place => place.id === id), animate);
     if (changed) {
       const selected = [...timeline.querySelectorAll('button')].find(button => button.dataset.place === id);
       if (selected) {
@@ -763,12 +830,15 @@ function mountLife(root) {
   }
   function scheduleSync() { if (syncFrame === null) syncFrame = requestAnimationFrame(syncPosition); }
   function jumpTo(id) {
+    setActive(id, true, true);
     root.style.setProperty('--places-anchor-offset', `${$('.places-rail').getBoundingClientRect().height + 22}px`);
     const entry = [...entries.children].find(element => element.dataset.place === id);
     entry?.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
     scheduleSync();
   }
   function renderPlaces() {
+    updateStats();
+    renderMap();
     entries.replaceChildren(); timeline.replaceChildren();
     for (const place of places) {
       const entry = node('li', 'place-entry');
@@ -832,7 +902,7 @@ function mountLife(root) {
   function togglePicking(value) {
     if (value && animation !== null) { cancelAnimationFrame(animation); animation = null; }
     picking = value; globe.classList.toggle('picking', value);
-    globe.setAttribute('tabindex', value ? '0' : '-1');
+    globe.setAttribute('tabindex', '0');
     $('#place-pick').textContent = value ? 'Cancel picking' : 'Pick on globe';
     if (value) globe.setAttribute('aria-label', 'Pick a location. Arrow keys rotate the globe; Enter selects its center.');
   }
@@ -964,33 +1034,51 @@ function mountLife(root) {
   });
   on($('#place-pick'), 'click', () => { togglePicking(!picking); if (picking) { $('.places-rail').scrollIntoView({ block: 'center', behavior: 'instant' }); globe.focus({ preventScroll: true }); } });
   on(globe, 'pointerdown', event => {
-    if (!picking) return;
+    if (event.button !== 0 || drag) return;
+    const rect = globe.getBoundingClientRect();
+    if (Math.hypot((event.clientX - rect.left) * 280 / rect.width - 140, (event.clientY - rect.top) * 280 / rect.height - 140) > 119) return;
     event.preventDefault(); globe.setPointerCapture(event.pointerId);
+    globe.focus({ preventScroll: true });
+    if (animation !== null) { cancelAnimationFrame(animation); animation = null; }
+    globe.classList.add('grabbing');
     drag = { x: event.clientX, y: event.clientY, rotation: [...rotation], moved: false };
   });
   on(globe, 'pointermove', event => {
     if (!drag) return;
     const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
     if (Math.hypot(dx, dy) > 4) drag.moved = true;
+    if (drag.moved && !picking) {
+      freeRotation = true;
+      globe.setAttribute('aria-label', 'Globe. Drag or use arrow keys to rotate; Enter returns to the selected place.');
+    }
     if (animation !== null) { cancelAnimationFrame(animation); animation = null; }
     rotation = [drag.rotation[0] + dx * 0.6, Math.max(-85, Math.min(85, drag.rotation[1] - dy * 0.6)), 0]; drawGlobe();
   });
   on(globe, 'pointerup', event => {
     if (!drag) return;
-    const moved = drag.moved; drag = null;
-    if (moved) return;
+    const moved = drag.moved; drag = null; globe.classList.remove('grabbing');
+    if (moved || !picking) return;
     const rect = globe.getBoundingClientRect();
     const point = [(event.clientX - rect.left) * 280 / rect.width, (event.clientY - rect.top) * 280 / rect.height];
     if (Math.hypot(point[0] - 140, point[1] - 140) > 119) return;
     const [lon, lat] = projection.invert(point);
     chooseLocation({ name: $('#place-location').value.trim(), lat, lon }, false);
   });
-  on(globe, 'pointercancel', () => { drag = null; });
+  on(globe, 'pointercancel', () => { drag = null; globe.classList.remove('grabbing'); });
   on(globe, 'keydown', event => {
-    if (!picking) return;
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(event.key)) event.preventDefault(); else return;
-    if (event.key === 'Escape') { togglePicking(false); $('#place-pick').focus({ preventScroll: true }); return; }
-    if (event.key === 'Enter') { const [lon, lat] = projection.invert([140, 140]); chooseLocation({ name: $('#place-location').value.trim(), lat, lon }, false); return; }
+    if (event.key === 'Escape') {
+      if (picking) { togglePicking(false); $('#place-pick').focus({ preventScroll: true }); }
+      turnTo(preview || places.find(place => place.id === activeId)); return;
+    }
+    if (event.key === 'Enter') {
+      if (picking) { const [lon, lat] = projection.invert([140, 140]); chooseLocation({ name: $('#place-location').value.trim(), lat, lon }, false); }
+      else turnTo(preview || places.find(place => place.id === activeId));
+      return;
+    }
+    if (animation !== null) { cancelAnimationFrame(animation); animation = null; }
+    freeRotation = !picking;
+    if (!picking) globe.setAttribute('aria-label', 'Globe. Drag or use arrow keys to rotate; Enter returns to the selected place.');
     rotation[0] += event.key === 'ArrowLeft' ? -15 : event.key === 'ArrowRight' ? 15 : 0;
     rotation[1] = Math.max(-85, Math.min(85, rotation[1] + (event.key === 'ArrowUp' ? 15 : event.key === 'ArrowDown' ? -15 : 0))); drawGlobe();
   });
@@ -1040,11 +1128,12 @@ const sections = {
 
   travel: `<section class="detail life-page"><h1>Life</h1><div class="life-categories">
     <details class="project-card life-category" id="life-places"><summary><h2>Places</h2><span class="project-toggle" aria-hidden="true"></span></summary><div class="life-category-body">
-      <div class="places-toolbar"><button type="button" id="places-add" hidden>Add place</button><button type="button" id="places-edit">Edit places</button></div>
+      <div class="places-overview"><dl class="places-stats" aria-label="Travel stats"><div><dt>Countries</dt><dd id="places-country-count">0</dd></div><div><dt>Places</dt><dd id="places-location-count" title="Repeated visits to the same place count once.">0</dd></div><div><dt>Est. miles</dt><dd id="places-mile-count" title="Straight-line distances between dated entries in arrival order; unrecorded return trips are excluded.">0</dd></div></dl><div class="places-toolbar"><button type="button" id="places-add" hidden>Add place</button><button type="button" id="places-edit">Edit places</button></div></div>
+      <figure class="places-map"><svg id="places-world-map" viewBox="0 0 960 400" role="img" aria-label="World map of recorded places"><path class="places-map-land"/><g class="places-map-pins"></g></svg></figure>
       <form id="places-login" class="places-login" hidden><label>Editing password<input id="places-password" type="password" autocomplete="current-password" maxlength="256" required aria-describedby="places-login-status"></label><p id="places-login-status" role="alert" hidden></p><div class="place-form-actions"><button type="submit">Unlock</button><button type="button" id="places-login-cancel">Cancel</button></div></form>
       <p id="places-status" role="status" hidden></p>
       <div class="places-layout">
-        <aside class="places-rail"><figure class="place-globe"><svg id="life-globe" viewBox="0 0 280 280" role="img" aria-label="Globe showing Beijing"><circle cx="140" cy="140" r="119" class="globe-ocean"/><path class="globe-land"/><path class="globe-grid"/><circle cx="140" cy="140" r="119" class="globe-outline"/><g class="globe-pins"></g></svg><figcaption><strong id="globe-place">Beijing</strong><span id="globe-dates"></span></figcaption></figure><nav class="place-timeline" aria-label="Places timeline"><ol id="places-timeline"></ol></nav></aside>
+        <aside class="places-rail"><figure class="place-globe"><svg id="life-globe" viewBox="0 0 280 280" role="img" tabindex="0" aria-label="Globe. Drag or use arrow keys to rotate."><circle cx="140" cy="140" r="119" class="globe-ocean"/><path class="globe-land"/><path class="globe-grid"/><circle cx="140" cy="140" r="119" class="globe-outline"/><g class="globe-pins"></g></svg><figcaption><strong id="globe-place">Beijing</strong><span id="globe-dates"></span></figcaption></figure><nav class="place-timeline" aria-label="Places timeline"><ol id="places-timeline"></ol></nav></aside>
         <div class="places-story"><ol class="place-entries" id="places-entries"></ol>
           <form id="place-editor" class="place-editor" hidden><h3 id="place-editor-title">Add place</h3><label>Location<div class="location-search"><input id="place-location" type="text" maxlength="100" autocomplete="off" required><button type="button" id="place-search">Find</button></div></label><div id="place-search-results" class="place-search-results"></div><div class="place-location-actions"><button type="button" id="place-pick">Pick on globe</button><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" id="place-attribution" hidden>© OpenStreetMap</a></div><div class="place-date-fields"><label>From<input type="month" id="place-from" min="1000-01" max="9999-12"></label><label>To<input type="month" id="place-to" min="1000-01" max="9999-12"></label></div><label class="place-present"><input type="checkbox" id="place-present">Present</label><label>Description<textarea id="place-note" rows="3" maxlength="1000"></textarea></label><fieldset class="place-highlight-editor"><legend>Highlights</legend><ul id="place-highlight-fields" class="place-highlight-fields"></ul><button type="button" id="place-highlight-add">Add highlight</button></fieldset><p id="place-form-status" role="status" hidden></p><div class="place-form-actions"><button type="submit">Save place</button><button type="button" id="place-cancel">Cancel</button></div></form>
         </div>

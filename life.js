@@ -6,6 +6,22 @@ function sortLifePlaces(places) {
   // Keep undated entries after dated ones, preserving their saved order.
   return [...places].sort((a, b) => (b.start || '').localeCompare(a.start || ''));
 }
+function lifeDistinctPlaces(places) {
+  const distance = (a, b) => d3.geoDistance([a.lon, a.lat], [b.lon, b.lat]) * 3958.7613;
+  const name = place => place.name.split(',')[0].normalize('NFKD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const distinct = [];
+  for (const place of places) {
+    if (!distinct.some(other => distance(place, other) < 0.1 || name(place) === name(other) && distance(place, other) < 25)) distinct.push(place);
+  }
+  return distinct;
+}
+function lifeTravelStats(places) {
+  const distance = (a, b) => d3.geoDistance([a.lon, a.lat], [b.lon, b.lat]) * 3958.7613;
+  const dated = places.filter(place => place.start).sort((a, b) => a.start.localeCompare(b.start));
+  const miles = dated.reduce((total, place, index) => total + (index ? distance(dated[index - 1], place) : 0), 0);
+  const countries = new Set(places.map(place => place.country).filter(Boolean));
+  return { places: lifeDistinctPlaces(places).length, countries: countries.size, unresolvedCountries: places.some(place => !place.country), miles: Math.round(miles) };
+}
 function mountLife(root) {
   const controller = new AbortController();
   const signal = controller.signal;
@@ -21,6 +37,9 @@ function mountLife(root) {
   const entries = $('#places-entries');
   const timeline = $('#places-timeline');
   const globe = $('#life-globe');
+  const worldMap = $('#places-world-map');
+  const mapProjection = d3.geoNaturalEarth1().fitExtent([[16, 10], [944, 382]], { type: 'Sphere' });
+  const mapPath = d3.geoPath(mapProjection);
   const editor = $('#place-editor');
   const highlightFields = $('#place-highlight-fields');
   const addHighlight = $('#place-highlight-add');
@@ -39,8 +58,9 @@ function mountLife(root) {
   let preview = null;
   let picking = false;
   let drag = null;
+  let freeRotation = false;
   let activeId = places[0]?.id;
-  let rotation = [-places[0].lon, -places[0].lat, 0];
+  let rotation = [-(places[0]?.lon || 0), -(places[0]?.lat || 0), 0];
   let animation = null;
   let syncFrame = null;
   const countryLookups = new Map();
@@ -64,11 +84,35 @@ function mountLife(root) {
     countryFor(place).then(country => {
       if (!country || !/^[A-Z]{2}$/.test(country) || signal.aborted || !heading.isConnected) return;
       place.country = country;
+      updateStats();
       const flag = node('span', 'place-flag', String.fromCodePoint(...[...country].map(letter => 127397 + letter.charCodeAt(0))));
       flag.setAttribute('role', 'img');
       flag.setAttribute('aria-label', `${new Intl.DisplayNames(['en'], { type: 'region' }).of(country)} flag`);
       heading.append(flag);
     });
+  }
+
+  function updateStats() {
+    const stats = lifeTravelStats(places);
+    $('#places-country-count').textContent = `${stats.countries}${stats.unresolvedCountries ? '+' : ''}`;
+    $('#places-country-count').title = stats.unresolvedCountries ? 'Known countries; some locations have not resolved a country yet.' : 'Distinct countries in these entries.';
+    $('#places-location-count').textContent = stats.places.toLocaleString('en-US');
+    $('#places-mile-count').textContent = stats.miles.toLocaleString('en-US');
+  }
+  function renderMap() {
+    worldMap.querySelector('.places-map-land').setAttribute('d', mapPath(LIFE_LAND));
+    const pins = worldMap.querySelector('.places-map-pins'); pins.replaceChildren();
+    const distinct = lifeDistinctPlaces(places);
+    worldMap.setAttribute('aria-label', `World map showing ${distinct.length} recorded places.`);
+    for (const place of distinct) {
+      const [x, y] = mapProjection([place.lon, place.lat]);
+      const pin = document.createElementNS(worldMap.namespaceURI, 'g');
+      pin.setAttribute('transform', `translate(${x},${y})`); pin.dataset.place = place.id;
+      const marker = document.createElementNS(worldMap.namespaceURI, 'path');
+      marker.setAttribute('d', 'M0 0C-2-3-4-5-4-8a4 4 0 0 1 8 0C4-5 2-3 0 0Z');
+      const label = document.createElementNS(worldMap.namespaceURI, 'title'); label.textContent = place.name;
+      pin.append(label, marker); pins.append(pin);
+    }
   }
 
   function message(element, text = '') { if (!element || signal.aborted) return; element.textContent = text; element.hidden = !text; }
@@ -138,12 +182,18 @@ function mountLife(root) {
     }
   }
   function turnTo(place, animate = true) {
-    if (!place) { drawGlobe(); return; }
     if (animation !== null) cancelAnimationFrame(animation);
     animation = null;
+    freeRotation = false;
+    if (!place) {
+      $('#globe-place').textContent = ''; $('#globe-dates').textContent = '';
+      delete globe.dataset.place;
+      globe.setAttribute('aria-label', 'Globe. Drag or use arrow keys to rotate.');
+      drawGlobe(); return;
+    }
     $('#globe-place').textContent = place.name;
     $('#globe-dates').textContent = period(place);
-    globe.setAttribute('aria-label', `Globe showing ${place.name}`);
+    globe.setAttribute('aria-label', `Globe focused on ${place.name}. Drag or use arrow keys to rotate; Enter returns to this place.`);
     globe.dataset.place = place.id || 'preview';
     const destination = [-place.lon, -place.lat, 0];
     const from = [...rotation];
@@ -158,14 +208,14 @@ function mountLife(root) {
     };
     animation = requestAnimationFrame(frame);
   }
-  function setActive(id, animate = true) {
+  function setActive(id, animate = true, recenter = false) {
     const changed = id !== activeId;
     activeId = id;
     for (const button of timeline.querySelectorAll('button')) {
       if (button.dataset.place === id) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current');
     }
     for (const entry of entries.children) entry.classList.toggle('current-place', entry.dataset.place === id);
-    if (!preview && !picking && (changed || !globe.dataset.place)) turnTo(places.find(place => place.id === id), animate);
+    if (!preview && !picking && !drag && (changed || recenter || !globe.dataset.place && !freeRotation)) turnTo(places.find(place => place.id === id), animate);
     if (changed) {
       const selected = [...timeline.querySelectorAll('button')].find(button => button.dataset.place === id);
       if (selected) {
@@ -190,12 +240,15 @@ function mountLife(root) {
   }
   function scheduleSync() { if (syncFrame === null) syncFrame = requestAnimationFrame(syncPosition); }
   function jumpTo(id) {
+    setActive(id, true, true);
     root.style.setProperty('--places-anchor-offset', `${$('.places-rail').getBoundingClientRect().height + 22}px`);
     const entry = [...entries.children].find(element => element.dataset.place === id);
     entry?.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
     scheduleSync();
   }
   function renderPlaces() {
+    updateStats();
+    renderMap();
     entries.replaceChildren(); timeline.replaceChildren();
     for (const place of places) {
       const entry = node('li', 'place-entry');
@@ -259,7 +312,7 @@ function mountLife(root) {
   function togglePicking(value) {
     if (value && animation !== null) { cancelAnimationFrame(animation); animation = null; }
     picking = value; globe.classList.toggle('picking', value);
-    globe.setAttribute('tabindex', value ? '0' : '-1');
+    globe.setAttribute('tabindex', '0');
     $('#place-pick').textContent = value ? 'Cancel picking' : 'Pick on globe';
     if (value) globe.setAttribute('aria-label', 'Pick a location. Arrow keys rotate the globe; Enter selects its center.');
   }
@@ -391,33 +444,51 @@ function mountLife(root) {
   });
   on($('#place-pick'), 'click', () => { togglePicking(!picking); if (picking) { $('.places-rail').scrollIntoView({ block: 'center', behavior: 'instant' }); globe.focus({ preventScroll: true }); } });
   on(globe, 'pointerdown', event => {
-    if (!picking) return;
+    if (event.button !== 0 || drag) return;
+    const rect = globe.getBoundingClientRect();
+    if (Math.hypot((event.clientX - rect.left) * 280 / rect.width - 140, (event.clientY - rect.top) * 280 / rect.height - 140) > 119) return;
     event.preventDefault(); globe.setPointerCapture(event.pointerId);
+    globe.focus({ preventScroll: true });
+    if (animation !== null) { cancelAnimationFrame(animation); animation = null; }
+    globe.classList.add('grabbing');
     drag = { x: event.clientX, y: event.clientY, rotation: [...rotation], moved: false };
   });
   on(globe, 'pointermove', event => {
     if (!drag) return;
     const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
     if (Math.hypot(dx, dy) > 4) drag.moved = true;
+    if (drag.moved && !picking) {
+      freeRotation = true;
+      globe.setAttribute('aria-label', 'Globe. Drag or use arrow keys to rotate; Enter returns to the selected place.');
+    }
     if (animation !== null) { cancelAnimationFrame(animation); animation = null; }
     rotation = [drag.rotation[0] + dx * 0.6, Math.max(-85, Math.min(85, drag.rotation[1] - dy * 0.6)), 0]; drawGlobe();
   });
   on(globe, 'pointerup', event => {
     if (!drag) return;
-    const moved = drag.moved; drag = null;
-    if (moved) return;
+    const moved = drag.moved; drag = null; globe.classList.remove('grabbing');
+    if (moved || !picking) return;
     const rect = globe.getBoundingClientRect();
     const point = [(event.clientX - rect.left) * 280 / rect.width, (event.clientY - rect.top) * 280 / rect.height];
     if (Math.hypot(point[0] - 140, point[1] - 140) > 119) return;
     const [lon, lat] = projection.invert(point);
     chooseLocation({ name: $('#place-location').value.trim(), lat, lon }, false);
   });
-  on(globe, 'pointercancel', () => { drag = null; });
+  on(globe, 'pointercancel', () => { drag = null; globe.classList.remove('grabbing'); });
   on(globe, 'keydown', event => {
-    if (!picking) return;
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(event.key)) event.preventDefault(); else return;
-    if (event.key === 'Escape') { togglePicking(false); $('#place-pick').focus({ preventScroll: true }); return; }
-    if (event.key === 'Enter') { const [lon, lat] = projection.invert([140, 140]); chooseLocation({ name: $('#place-location').value.trim(), lat, lon }, false); return; }
+    if (event.key === 'Escape') {
+      if (picking) { togglePicking(false); $('#place-pick').focus({ preventScroll: true }); }
+      turnTo(preview || places.find(place => place.id === activeId)); return;
+    }
+    if (event.key === 'Enter') {
+      if (picking) { const [lon, lat] = projection.invert([140, 140]); chooseLocation({ name: $('#place-location').value.trim(), lat, lon }, false); }
+      else turnTo(preview || places.find(place => place.id === activeId));
+      return;
+    }
+    if (animation !== null) { cancelAnimationFrame(animation); animation = null; }
+    freeRotation = !picking;
+    if (!picking) globe.setAttribute('aria-label', 'Globe. Drag or use arrow keys to rotate; Enter returns to the selected place.');
     rotation[0] += event.key === 'ArrowLeft' ? -15 : event.key === 'ArrowRight' ? 15 : 0;
     rotation[1] = Math.max(-85, Math.min(85, rotation[1] + (event.key === 'ArrowUp' ? 15 : event.key === 'ArrowDown' ? -15 : 0))); drawGlobe();
   });
