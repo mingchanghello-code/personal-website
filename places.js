@@ -170,6 +170,9 @@ function createPlacesService(options = {}) {
         fs.writeFileSync(temporary, JSON.stringify(next, null, 2) + '\n', { mode: 0o600 });
         fs.renameSync(temporary, storagePath);
         state = next;
+        // Publishing also refreshes the assistant's saved knowledge; editing drafts do not.
+        try { options.onPublish?.(state); }
+        catch { console.error('Could not persist assistant knowledge; current answers remain updated. Restart to retry.'); }
         const nextPhotos = photoIds(places);
         for (const id of previousPhotos) if (!nextPhotos.has(id)) photos.remove(id);
         send(res, 200, state); return true;

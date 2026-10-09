@@ -3,7 +3,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chat } = require('./agent');
 const { createPlacesService } = require('./places');
-const places = createPlacesService();
+const { createKnowledgeStore } = require('./assistant-knowledge');
+const directory = process.env.MING_SITE_DATA_DIR || path.join(__dirname, '.data');
+const knowledge = createKnowledgeStore(directory);
+const places = createPlacesService({ directory, onPublish: state => knowledge.update(state) });
+knowledge.update(places.read());
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript' };
 const limits = new Map();
 const server = http.createServer(async (req, res) => {
@@ -28,7 +32,7 @@ const server = http.createServer(async (req, res) => {
       for await (const chunk of req) { raw += chunk; if (Buffer.byteLength(raw) > 16000) { res.writeHead(413); res.end(JSON.stringify({ error: 'Request too large' })); return; } }
       const { question, history = [] } = JSON.parse(raw);
       if (typeof question !== 'string' || !question.trim() || question.length > 1000 || !Array.isArray(history) || history.length > 6 || history.some(m => !m || !['user', 'assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 2000)) { res.writeHead(400); res.end(JSON.stringify({ error: 'Invalid question or history' })); return; }
-      res.end(JSON.stringify(await chat(question.trim(), history))); return;
+      res.end(JSON.stringify(await chat(question.trim(), history, { knowledge: knowledge.read() }))); return;
     } catch { res.writeHead(400); res.end(JSON.stringify({ error: 'Invalid request' })); return; }
   }
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); res.end('Method not allowed'); return; }
