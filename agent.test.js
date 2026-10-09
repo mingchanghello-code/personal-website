@@ -57,3 +57,15 @@ test('AI receives a small relevant slice of the saved knowledge', () => {
   assert.ok(relevant.facts.length <= 3);
   assert.equal(relevant.placesRevision, 0);
 });
+
+test('broad travel questions use the published Places index', async () => {
+  const knowledge = compileKnowledge({ revision: 0, places: seed });
+  let providerCalled = false;
+  const answer = await chat('Where has Ming travelled to?', [], {
+    key: 'test-key', knowledge,
+    fetch: async () => { providerCalled = true; throw new Error('should not be needed'); }
+  });
+  assert.equal(providerCalled, false);
+  assert.equal(answer.sources[0].id, 'places-overview');
+  assert.match(answer.answer, /San Francisco Bay Area/);
+});
