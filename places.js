@@ -2,6 +2,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const seed = require('./places.seed.json');
+const highlightIcons = require('./highlight-icons.json');
+
+function validCountry(value) { return typeof value === 'string' && /^[A-Z]{2}$/.test(value); }
 
 function validatePlaces(places) {
   if (!Array.isArray(places) || places.length > 100) throw new Error('Use at most 100 places.');
@@ -11,9 +14,20 @@ function validatePlaces(places) {
     if (!place || typeof place.id !== 'string' || !/^[a-z0-9-]{1,64}$/.test(place.id) || ids.has(place.id)) throw new Error('Each place needs a unique ID.');
     ids.add(place.id);
     if (typeof place.name !== 'string' || !place.name.trim() || place.name.length > 100 || typeof place.note !== 'string' || place.note.length > 1000) throw new Error('Check the location name and notes.');
+    let highlights;
+    if (place.highlights !== undefined) {
+      if (!Array.isArray(place.highlights) || place.highlights.length > 5) throw new Error('Use up to five highlights.');
+      highlights = place.highlights.map(item => {
+        const text = typeof item === 'string' ? item : item?.text;
+        const icon = typeof item === 'string' ? 'bullet' : item?.icon;
+        if (typeof text !== 'string' || !text.trim() || text.length > 200 || !Object.hasOwn(highlightIcons, icon)) throw new Error('Each highlight needs 1–200 characters and an available icon.');
+        return { text: text.trim(), icon };
+      });
+    }
+    if (place.country !== undefined && !validCountry(place.country)) throw new Error('Check the country code.');
     if (!Number.isFinite(place.lat) || Math.abs(place.lat) > 90 || !Number.isFinite(place.lon) || Math.abs(place.lon) > 180) throw new Error('Choose a location on the map.');
     if (!date(place.start) || !date(place.end) || typeof place.current !== 'boolean' || place.current && place.end !== null || place.start && place.end && place.end < place.start) throw new Error('Check the date range.');
-    return { id: place.id, name: place.name.trim(), start: place.start, end: place.end, current: place.current, lat: place.lat, lon: place.lon, note: place.note.trim() };
+    return { id: place.id, name: place.name.trim(), start: place.start, end: place.end, current: place.current, lat: place.lat, lon: place.lon, note: place.note.trim(), ...(highlights === undefined ? {} : { highlights }), ...(place.country === undefined ? {} : { country: place.country }) };
   });
 }
 
@@ -45,6 +59,7 @@ function createPlacesService(options = {}) {
   const sessions = new Map();
   const attempts = new Map();
   const searches = new Map();
+  const countries = new Map();
   const hash = value => crypto.createHash('sha256').update(value).digest();
   const ownerHash = hash(ownerKey || '');
   const send = (res, code, data) => { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(data)); };
@@ -91,6 +106,26 @@ function createPlacesService(options = {}) {
         res.setHeader('Set-Cookie', cookie(req, token, 8 * 3600)); send(res, 200, { canEdit: true, token }); return true;
       }
       if (url.pathname === '/api/places' && req.method === 'GET') { send(res, 200, state); return true; }
+      if (url.pathname === '/api/places/country' && req.method === 'GET') {
+        const lat = Number(url.searchParams.get('lat')), lon = Number(url.searchParams.get('lon'));
+        if (!url.searchParams.has('lat') || !url.searchParams.has('lon') || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) { send(res, 400, { error: 'Choose a valid location.' }); return true; }
+        const known = seed.find(place => place.lat === lat && place.lon === lon);
+        if (known?.country) { send(res, 200, { country: known.country }); return true; }
+        const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+        if (countries.has(key)) { send(res, 200, { country: countries.get(key) }); return true; }
+        try {
+          const endpoint = new URL('https://photon.komoot.io/reverse');
+          endpoint.searchParams.set('lat', lat); endpoint.searchParams.set('lon', lon); endpoint.searchParams.set('limit', '1'); endpoint.searchParams.set('radius', '10');
+          const response = await (options.fetch || fetch)(endpoint, { signal: AbortSignal.timeout(8000) });
+          if (!response.ok) throw new Error('Country lookup unavailable.');
+          const data = await response.json();
+          const raw = data.features?.[0]?.properties?.countrycode;
+          const code = typeof raw === 'string' ? raw.toUpperCase() : null;
+          const country = validCountry(code) ? code : null;
+          if (countries.size >= 500) countries.delete(countries.keys().next().value);
+          countries.set(key, country); send(res, 200, { country }); return true;
+        } catch { send(res, 503, { error: 'Country lookup unavailable.' }); return true; }
+      }
       if (!session(req)) { send(res, 401, { error: 'Unlock editing first.' }); return true; }
       if (url.pathname === '/api/places' && req.method === 'PUT') {
         const input = await body(req);
@@ -109,7 +144,7 @@ function createPlacesService(options = {}) {
         const cached = searches.get(query.toLowerCase());
         if (cached) { send(res, 200, cached); return true; }
         const known = seed.filter(place => place.name.toLowerCase().includes(query.toLowerCase()));
-        if (known.length) { const result = { results: known.map(({ name, lat, lon }) => ({ name, lat, lon })) }; send(res, 200, result); return true; }
+        if (known.length) { const result = { results: known.map(({ name, lat, lon, country }) => ({ name, lat, lon, country })) }; send(res, 200, result); return true; }
         try {
           const endpoint = new URL('https://photon.komoot.io/api/');
           endpoint.searchParams.set('q', query); endpoint.searchParams.set('limit', '5'); endpoint.searchParams.set('lang', 'en');
@@ -120,7 +155,8 @@ function createPlacesService(options = {}) {
             const [lon, lat] = feature.geometry?.coordinates || [];
             const properties = feature.properties || {};
             const name = [properties.name, properties.city !== properties.name ? properties.city : null, properties.country].filter(Boolean).join(', ');
-            return name && name.length <= 100 && Number.isFinite(lat) && Math.abs(lat) <= 90 && Number.isFinite(lon) && Math.abs(lon) <= 180 ? [{ name, lat, lon }] : [];
+            const country = typeof properties.countrycode === 'string' ? properties.countrycode.toUpperCase() : null;
+            return name && name.length <= 100 && Number.isFinite(lat) && Math.abs(lat) <= 90 && Number.isFinite(lon) && Math.abs(lon) <= 180 ? [{ name, lat, lon, ...(validCountry(country) ? { country } : {}) }] : [];
           });
           const result = { results, attribution: 'OpenStreetMap' };
           if (searches.size > 100) searches.clear(); searches.set(query.toLowerCase(), result);

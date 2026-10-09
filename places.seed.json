@@ -1,5 +1,5 @@
 [
-  {"id":"beijing","name":"Beijing","start":null,"end":null,"current":false,"lat":39.9042,"lon":116.4074,"note":"Where I grew up."},
-  {"id":"new-york","name":"New York","start":null,"end":null,"current":false,"lat":40.7128,"lon":-74.006,"note":"Where I studied statistics at Columbia."},
-  {"id":"bay-area","name":"San Francisco Bay Area","start":"2013","end":null,"current":true,"lat":37.7749,"lon":-122.4194,"note":"Home since 2013."}
+  {"id":"beijing","name":"Beijing","start":null,"end":null,"current":false,"lat":39.9042,"lon":116.4074,"country":"CN","note":"Where I grew up."},
+  {"id":"new-york","name":"New York","start":null,"end":null,"current":false,"lat":40.7128,"lon":-74.006,"country":"US","note":"Where I studied statistics at Columbia."},
+  {"id":"bay-area","name":"San Francisco Bay Area","start":"2013","end":null,"current":true,"lat":37.7749,"lon":-122.4194,"country":"US","note":"Home since 2013."}
 ]

@@ -56,7 +56,7 @@ test('published entries are shared with visitors and survive a service restart',
   const { request, unlock, directory } = await fixture(t);
   const headers = await unlock();
   const state = (await request('')).body;
-  const tokyo = { id: 'place-tokyo', name: 'Tokyo', start: '2020-02', end: '2020-03', current: false, lat: 35.6762, lon: 139.6503, note: 'An owner-supplied entry.' };
+  const tokyo = { id: 'place-tokyo', name: 'Tokyo', start: '2020-02', end: '2020-03', current: false, lat: 35.6762, lon: 139.6503, country: 'JP', note: 'An owner-supplied entry.', highlights: [{ text: 'A walk through the city.', icon: 'outdoors' }, { text: '<script>Text, never code.</script>', icon: 'bullet' }] };
   const result = await request('', 'PUT', { revision: state.revision, places: [...state.places, tokyo] }, headers);
   assert.equal(result.status, 200); assert.equal(result.body.revision, 1);
   const visitor = await request('');
@@ -78,6 +78,8 @@ test('invalid dates, coordinates, duplicate IDs, and unsupported payloads are re
   assert.throws(() => validatePlaces([seed[0], seed[0]]));
   assert.throws(() => validatePlaces({ places: seed }));
   assert.deepEqual(validatePlaces(seed), seed);
+  for (const highlights of [null, 'one highlight', Array(6).fill('Too many'), [''], ['   '], [1], ['a'.repeat(201)], [{ text: 'Hello', icon: '<svg>' }], [{ text: 'Hello', icon: '__proto__' }]]) assert.throws(() => validatePlaces([{ ...seed[0], highlights }]));
+  assert.deepEqual(validatePlaces([{ ...seed[0], highlights: ['Older plain-text highlight'] }])[0].highlights, [{ text: 'Older plain-text highlight', icon: 'bullet' }]);
 });
 
 test('location search handles provider results and failures without inventing coordinates', async t => {
@@ -90,6 +92,25 @@ test('location search handles provider results and failures without inventing co
   assert.equal((await request('/search?q=Beijing', 'GET', undefined, headers)).body.results[0].name, 'Beijing');
   const failed = await fixture(t, { fetch: async () => { throw new Error('Unavailable'); } });
   assert.equal((await failed.request('/search?q=Tokyo', 'GET', undefined, await failed.unlock())).status, 503);
+});
+
+test('country flags resolve for existing and manually chosen locations without editing access', async t => {
+  let calls = 0;
+  const { request } = await fixture(t, { fetch: async endpoint => {
+    calls++;
+    assert.equal(endpoint.pathname, '/reverse');
+    if (endpoint.searchParams.get('lon') === '0') throw new Error('Offline');
+    return { ok: true, json: async () => ({ features: endpoint.searchParams.get('lon') === '1' ? [] : [{ properties: { countrycode: 'jp' } }] }) };
+  } });
+  assert.deepEqual((await request('/country?lat=39.9042&lon=116.4074')).body, { country: 'CN' });
+  assert.equal(calls, 0);
+  assert.deepEqual((await request('/country?lat=35.67&lon=139.65')).body, { country: 'JP' });
+  assert.deepEqual((await request('/country?lat=35.67&lon=139.65')).body, { country: 'JP' });
+  assert.equal(calls, 1);
+  assert.deepEqual((await request('/country?lat=0&lon=1')).body, { country: null });
+  assert.equal((await request('/country?lat=0&lon=0')).status, 503);
+  assert.equal((await request('/country?lat=91&lon=0')).status, 400);
+  assert.equal((await request('/country?lat=0')).status, 400);
 });
 
 test('generated editing passwords stay private and persist across restarts', t => {

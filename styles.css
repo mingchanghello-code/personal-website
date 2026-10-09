@@ -387,6 +387,23 @@ button:disabled { opacity: 1; }
 .place-entry h3 { margin: 0 0 10px; font-size: 22px; font-weight: 550; letter-spacing: -.4px; }
 .place-entry .place-period { font-size: 11px; margin: 0 0 20px; }
 .place-entry .place-description { font-size: 14px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.place-highlights { list-style: none; margin: 14px 0 0; padding: 0; font-size: 14px; line-height: 1.7; }
+.place-highlights li { display: flex; align-items: flex-start; gap: 9px; margin: 5px 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.place-highlights li > span:last-child { min-width: 0; }
+.highlight-icon { display: inline-flex; width: 18px; height: 18px; flex: 0 0 18px; color: #000; }
+.place-highlights .highlight-icon { margin-top: 3px; }
+.highlight-icon svg { width: 100%; height: 100%; }
+.place-flag { font-size: 19px; margin-left: 9px; font-weight: 400; vertical-align: middle; }
+.place-editor .place-highlight-editor { border: 0; padding: 0; margin: 0 0 20px; min-width: 0; }
+.place-highlight-editor legend { padding: 0; font-size: 12px; margin-bottom: 8px; }
+.place-highlight-fields { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 8px; }
+.place-highlight-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; margin-bottom: 8px; }
+.place-editor .place-highlight-field input { min-width: 0; margin: 0; grid-column: 1 / -1; }
+.place-highlight-choice { display: flex; align-items: center; gap: 8px; }
+.place-highlight-choice select { min-width: 0; border: 1px solid #000; border-radius: 5px; padding: 6px; font: inherit; font-size: 12px; background: #fff; color: #000; }
+.place-highlight-editor button { border: 1px solid #000; border-radius: 5px; background: #fff; color: #000; padding: 6px 10px; font-size: 12px; }
+.place-highlight-editor button:hover { text-decoration: underline; }
+.place-highlight-editor button:disabled { border-style: dashed; cursor: default; }
 .place-entry-actions { display: flex; gap: 8px; margin-top: 20px; }
 .place-entry-actions button { font-size: 11px; }
 .places-login, .place-editor { border: 1px solid #000; border-radius: 8px; padding: 18px; background: #fff; }

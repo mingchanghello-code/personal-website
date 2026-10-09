@@ -20,6 +20,10 @@ Life has three expandable sections: Places, Hobbies, and Self-reflection. Places
 
 Places and the timeline show the newest start date first. Undated entries appear afterward in their saved order. Date ranges can overlap: a home marked Present remains ongoing while a trip is recorded separately. Each entry independently selects its location on the globe.
 
+Each place can have up to five optional highlights, shown as simple bullet points under its description. The editor supports adding and removing highlight fields; each accepts up to 200 characters of plain text and a monochrome icon. Icon choices include food, outdoors, beach, culture, people, activity, travel, and a plain bullet. Existing entries continue working without highlights.
+
+Place headings automatically show the country's flag emoji. Location search supplies the country; pins chosen manually and older entries use reverse lookup through Photon. The initial Beijing, New York, and Bay Area coordinates have built-in country information. Flags are omitted when the lookup cannot determine a country, and remain separate from the site's monochrome icons.
+
 Open Places → Edit places to edit directly. Password protection is disabled for this initial version; anyone with the website link can add, update, or remove entries.
 
 To restore password protection later, set `MING_SITE_EDIT_PROTECTED=true` on the server. In protected mode, the server uses `MING_SITE_EDIT_KEY` when supplied, or generates a private password in `.data/owner-key.txt`. The password is never included in the website or public API. Sessions expire after eight hours and end with Done editing or a server restart. An HttpOnly, SameSite cookie is used normally; embedded previews can use a session token kept only in page memory when cookies are blocked.

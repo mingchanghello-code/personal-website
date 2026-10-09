@@ -1,0 +1,10 @@
+{
+  "bullet": { "label": "Bullet", "svg": "<circle cx=\"12\" cy=\"12\" r=\"2\" fill=\"currentColor\"/>" },
+  "food": { "label": "Food", "svg": "<path d=\"M4 3v6a3 3 0 0 0 6 0V3M7 3v18M19 3c-4 3-4 7 0 9V3Zm0 9v9\"/>" },
+  "outdoors": { "label": "Outdoors", "svg": "<path d=\"m2 20 7-14 8 14H2Zm12-6 3-6 5 12h-5M6 12l3 2 3-2\"/><circle cx=\"17\" cy=\"4\" r=\"2\"/>" },
+  "beach": { "label": "Beach", "svg": "<path d=\"M3 11a9 9 0 0 1 18 0H3Zm9-9v19M8 21h8M12 2c-4 4-4 6-4 9m4-9c4 4 4 6 4 9\"/>" },
+  "culture": { "label": "Culture", "svg": "<path d=\"m3 8 9-5 9 5H3Zm2 3v7m5-7v7m4-7v7m5-7v7M3 21h18\"/>" },
+  "people": { "label": "People", "svg": "<circle cx=\"9\" cy=\"7\" r=\"3\"/><path d=\"M3 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6m3 11v-3a6 6 0 0 0-3-5\"/>" },
+  "activity": { "label": "Activity", "svg": "<circle cx=\"14\" cy=\"4\" r=\"2\"/><path d=\"m8 21 4-7m1 7-1-7-3-4 3-3 4 4h4M4 12h3l2-2\"/>" },
+  "travel": { "label": "Travel", "svg": "<path d=\"m22 2-7 20-4-9-9-4L22 2ZM11 13 22 2\"/>" }
+}

@@ -22,6 +22,8 @@ function mountLife(root) {
   const timeline = $('#places-timeline');
   const globe = $('#life-globe');
   const editor = $('#place-editor');
+  const highlightFields = $('#place-highlight-fields');
+  const addHighlight = $('#place-highlight-add');
   const login = $('#places-login');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const projection = d3.geoOrthographic().translate([140, 140]).scale(119).clipAngle(90);
@@ -41,6 +43,33 @@ function mountLife(root) {
   let rotation = [-places[0].lon, -places[0].lat, 0];
   let animation = null;
   let syncFrame = null;
+  const countryLookups = new Map();
+
+  function highlightIcon(value) {
+    const definition = Object.hasOwn(LIFE_HIGHLIGHT_ICONS, value) ? LIFE_HIGHLIGHT_ICONS[value] : LIFE_HIGHLIGHT_ICONS.bullet;
+    const icon = node('span', 'highlight-icon');
+    icon.setAttribute('role', 'img'); icon.setAttribute('aria-label', definition.label);
+    // Only checked-in SVG paths enter this markup; highlight text uses textContent.
+    icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${definition.svg}</svg>`;
+    return icon;
+  }
+  function countryFor(place) {
+    const known = LIFE_DEFAULT_PLACES.find(item => item.lat === place.lat && item.lon === place.lon);
+    if (place.country || known?.country) return Promise.resolve(place.country || known.country);
+    const key = `${place.lat},${place.lon}`;
+    if (!countryLookups.has(key)) countryLookups.set(key, request(`/country?lat=${place.lat}&lon=${place.lon}`).then(result => result.country).catch(() => null));
+    return countryLookups.get(key);
+  }
+  function addPlaceFlag(heading, place) {
+    countryFor(place).then(country => {
+      if (!country || !/^[A-Z]{2}$/.test(country) || signal.aborted || !heading.isConnected) return;
+      place.country = country;
+      const flag = node('span', 'place-flag', String.fromCodePoint(...[...country].map(letter => 127397 + letter.charCodeAt(0))));
+      flag.setAttribute('role', 'img');
+      flag.setAttribute('aria-label', `${new Intl.DisplayNames(['en'], { type: 'region' }).of(country)} flag`);
+      heading.append(flag);
+    });
+  }
 
   function message(element, text = '') { if (!element || signal.aborted) return; element.textContent = text; element.hidden = !text; }
   function dateLabel(value) {
@@ -171,9 +200,18 @@ function mountLife(root) {
     for (const place of places) {
       const entry = node('li', 'place-entry');
       entry.id = `place-entry-${place.id}`; entry.dataset.place = place.id;
-      entry.append(node('h3', '', place.name));
+      const heading = node('h3', '', place.name); entry.append(heading); addPlaceFlag(heading, place);
       if (period(place)) entry.append(node('p', 'place-period', period(place)));
       if (place.note) entry.append(node('p', 'place-description', place.note));
+      if (place.highlights?.length) {
+        const highlights = node('ul', 'place-highlights');
+        for (const highlight of place.highlights) {
+          const item = node('li');
+          item.append(highlightIcon(typeof highlight === 'string' ? 'bullet' : highlight.icon), node('span', '', typeof highlight === 'string' ? highlight : highlight.text));
+          highlights.append(item);
+        }
+        entry.append(highlights);
+      }
       if (editing) {
         const actions = node('div', 'place-entry-actions');
         const edit = node('button', '', 'Edit'); edit.type = 'button'; on(edit, 'click', () => showEditor(place));
@@ -230,6 +268,36 @@ function mountLife(root) {
     message($('#place-form-status'));
     turnTo(places.find(place => place.id === activeId));
   }
+  function syncHighlightFields() {
+    [...highlightFields.children].forEach((row, index) => {
+      row.querySelector('input').setAttribute('aria-label', `Highlight ${index + 1}`);
+      row.querySelector('select').setAttribute('aria-label', `Icon for highlight ${index + 1}`);
+      row.querySelector('button').setAttribute('aria-label', `Remove highlight ${index + 1}`);
+    });
+    addHighlight.disabled = highlightFields.children.length >= 5;
+  }
+  function appendHighlight(value = { text: '', icon: 'bullet' }, focus = false) {
+    if (highlightFields.children.length >= 5) return;
+    const row = node('li', 'place-highlight-field');
+    const input = node('input'); input.type = 'text'; input.maxLength = 200; input.value = typeof value === 'string' ? value : value.text;
+    const choice = node('div', 'place-highlight-choice');
+    const select = node('select');
+    for (const [key, definition] of Object.entries(LIFE_HIGHLIGHT_ICONS)) {
+      const option = node('option', '', definition.label); option.value = key; select.append(option);
+    }
+    select.value = typeof value === 'string' ? 'bullet' : value.icon;
+    choice.append(highlightIcon(select.value), select);
+    on(select, 'change', () => choice.replaceChild(highlightIcon(select.value), choice.firstElementChild));
+    const remove = node('button', '', 'Remove'); remove.type = 'button';
+    on(remove, 'click', () => {
+      if (saving) return;
+      const next = row.nextElementSibling || row.previousElementSibling;
+      row.remove(); syncHighlightFields();
+      (next?.querySelector('input') || addHighlight).focus();
+    });
+    row.append(input, choice, remove); highlightFields.append(row); syncHighlightFields();
+    if (focus) input.focus();
+  }
   function showEditor(place = null) {
     editingId = place?.id || null; editor.reset();
     $('#place-editor-title').textContent = place ? 'Edit place' : 'Add place';
@@ -241,7 +309,10 @@ function mountLife(root) {
     $('#place-to').disabled = $('#place-present').checked;
     $('#place-to').required = !place && !$('#place-present').checked;
     $('#place-note').value = place?.note || '';
-    chosenLocation = place ? { name: place.name, lat: place.lat, lon: place.lon } : null;
+    highlightFields.replaceChildren();
+    for (const highlight of place?.highlights || []) appendHighlight(highlight);
+    syncHighlightFields();
+    chosenLocation = place ? { name: place.name, lat: place.lat, lon: place.lon, country: place.country } : null;
     preview = null; togglePicking(false);
     $('#place-search-results').replaceChildren(); $('#place-attribution').hidden = true;
     message($('#place-form-status')); editor.hidden = false;
@@ -253,6 +324,9 @@ function mountLife(root) {
     chosenLocation = { ...location };
     if (replaceName) $('#place-location').value = location.name;
     preview = { ...location, name: $('#place-location').value.trim() || 'Selected location', start: null, end: null, current: false };
+    countryFor(location).then(country => {
+      if (country && !signal.aborted && chosenLocation?.lat === location.lat && chosenLocation?.lon === location.lon) chosenLocation.country = country;
+    });
     togglePicking(false); turnTo(preview);
     $('#place-search-results').replaceChildren();
     message($('#place-form-status'), 'Location selected.');
@@ -292,6 +366,7 @@ function mountLife(root) {
     finally { button.disabled = false; button.textContent = 'Unlock'; login.removeAttribute('aria-busy'); }
   });
   on($('#places-add'), 'click', () => showEditor());
+  on(addHighlight, 'click', () => { if (!saving) appendHighlight(undefined, true); });
   on($('#place-cancel'), 'click', () => { closeEditor(); $('#places-add').focus({ preventScroll: true }); });
   on($('#place-present'), 'change', () => {
     $('#place-to').disabled = $('#place-present').checked;
@@ -354,7 +429,9 @@ function mountLife(root) {
       id: editingId || `place-${crypto.randomUUID()}`, name: $('#place-location').value.trim(),
       start: $('#place-from').value || (previous?.start?.length === 4 ? previous.start : null),
       end: $('#place-present').checked ? null : $('#place-to').value || null, current: $('#place-present').checked,
-      lat: chosenLocation.lat, lon: chosenLocation.lon, note: $('#place-note').value.trim()
+      lat: chosenLocation.lat, lon: chosenLocation.lon, note: $('#place-note').value.trim(),
+      highlights: [...highlightFields.children].map(row => ({ text: row.querySelector('input').value.trim(), icon: row.querySelector('select').value })).filter(item => item.text),
+      ...(chosenLocation.country ? { country: chosenLocation.country } : {})
     };
     if (place.start && place.end && place.end < place.start) { message($('#place-form-status'), 'The end date must be after the start date.'); return; }
     const next = editingId ? places.map(item => item.id === editingId ? place : item) : [...places, place];
