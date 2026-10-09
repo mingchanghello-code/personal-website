@@ -8,7 +8,7 @@ const { sortLifePlaces, lifeDistinctPlaces, lifeTravelStats } = require('./place
 // These are our own checked-in templates, never fetched HTML or user-authored markup.
 function pageText(html) {
   return html.replace(/<(svg|button|nav)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
-    .replace(/<br\s*\/?\s*>/gi, '\n').replace(/<\/(?:p|h[1-6]|section|header|summary|div)>/gi, '\n')
+    .replace(/<br\s*\/?\s*>/gi, '\n').replace(/<\/(?:p|li|h[1-6]|section|header|summary|div)>/gi, '\n')
     .replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
     .replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
