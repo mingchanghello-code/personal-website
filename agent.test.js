@@ -17,7 +17,7 @@ test('no unknown or model-written claims can enter an answer', () => {
   assert.equal(grounded(['google', 'didi', 'fast', 'meta'], 'ai').sources.length, 0);
 });
 test('AI selects only facts; fabricated response text is discarded', async () => {
-  const response = await chat('What did Ming study?', [], { key: 'test-key', fetch: async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ ids: ['education'], answer: 'He went to Harvard' }) } }] }) }) });
+  const response = await chat('Could you elaborate on Ming’s academic training?', [], { key: 'test-key', fetch: async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ ids: ['education'], answer: 'He went to Harvard' }) } }] }) }) });
   assert.match(response.answer, /Columbia/); assert.doesNotMatch(response.answer, /Harvard/); assert.equal(response.mode, 'ai');
 });
 test('provider failure transparently falls back to profile search', async () => {
@@ -68,4 +68,25 @@ test('broad travel questions use the published Places index', async () => {
   assert.equal(providerCalled, false);
   assert.equal(answer.sources[0].id, 'places-overview');
   assert.match(answer.answer, /San Francisco Bay Area/);
+});
+
+test('broad section questions use the matching saved source', async () => {
+  const knowledge = compileKnowledge({ revision: 0, places: seed });
+  const cases = [
+    ['What does Ming do for work?', 'work', /experimentation/],
+    ['What products has Ming built?', 'work', /experimentation/],
+    ['Tell me about Ming’s career', 'career', /Google/],
+    ['What did Ming study?', 'education', /Columbia/],
+    ['What does Ming write about?', 'writing', /simple/],
+    ['What does Ming do outside work?', 'interests', /swimming/],
+    ['How does Ming think about work?', 'philosophy', /real problems/],
+    ['What did Ming do at Meta?', 'meta', /Experimentation Platform/]
+  ];
+  for (const [question, id, expected] of cases) {
+    let called = false;
+    const answer = await chat(question, [], { key: 'test-key', knowledge, fetch: async () => { called = true; throw new Error('should not be needed'); } });
+    assert.equal(called, false, question);
+    assert.equal(answer.sources[0].id, id, question);
+    assert.match(answer.answer, expected, question);
+  }
 });
