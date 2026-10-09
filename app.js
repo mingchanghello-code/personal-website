@@ -1,5 +1,5 @@
 const content = document.querySelector('#content');
-const labels = { home: 'Home', about: 'About me', work: 'Work', travel: 'Life', notes: 'Writing' };
+const labels = { home: 'Home', about: 'About me', work: 'Work', travel: 'Travel', hobbies: 'Hobbies', notes: 'Writing' };
 const panel = document.querySelector('#chat-panel');
 const questionInput = document.querySelector('#question');
 const messages = document.querySelector('#messages');
@@ -173,7 +173,7 @@ function addMessage(text, type) {
 }
 function addSources(element, sources) {
   if (!sources.length) return;
-  const sectionsBySource = { about: 'about', education: 'about', contact: 'about', work: 'work', career: 'work', meta: 'work', notifications: 'work', linkedin: 'work', google: 'work', didi: 'work', fast: 'work', travel: 'travel', interests: 'travel', philosophy: 'notes', complexity: 'notes', writing: 'notes', teams: 'notes', speed: 'notes' };
+  const sectionsBySource = { about: 'about', education: 'about', contact: 'about', work: 'work', career: 'work', meta: 'work', notifications: 'work', linkedin: 'work', google: 'work', didi: 'work', fast: 'work', travel: 'travel', interests: 'hobbies', philosophy: 'notes', complexity: 'notes', writing: 'notes', teams: 'notes', speed: 'notes' };
   const details = document.createElement('details'); details.className = 'sources';
   const summary = document.createElement('summary'); summary.textContent = `${sources.length} profile ${sources.length === 1 ? 'source' : 'sources'}`;
   const links = document.createElement('div'); links.className = 'source-links';

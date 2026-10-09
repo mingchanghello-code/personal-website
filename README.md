@@ -18,9 +18,9 @@ The server listens on port 3000 (override with `PORT`). Run `npm run check` and 
 
 You can also open `index.html` directly to browse the styled website without a server. Chat and shared place editing require the running Node server. `npm run build` embeds the page templates, styles, application scripts, and globe assets into a self-contained HTML file; `npm run dev` and `npm start` rebuild it automatically. The homepage is included as real HTML so it also remains visible without JavaScript.
 
-## Life and places
+## Travel and hobbies
 
-Life has three expandable sections: Places, Hobbies, and Self-reflection. Places follows the entry in view with a timeline and an orthographic globe. Hobbies and Self-reflection remain TBD. Initial places come from `places.seed.json`; unspecified dates remain blank.
+Travel and Hobbies are separate pages in the sidebar and home page. Travel shows Places with a timeline and an orthographic globe that follow the entry in view. Hobbies contains placeholders for Swimming, Raising chickens, and Woodwork. Initial places come from `places.seed.json`; unspecified dates remain blank.
 
 Places and the timeline show the newest start date first. Undated entries appear afterward in their saved order. Date ranges can overlap: a home marked Present remains ongoing while a trip is recorded separately. Each entry independently selects its location on the globe.
 
@@ -61,7 +61,7 @@ The repository includes `render.yaml` for a single Node web service with a 1 GB 
 1. Open [Deploy to Render](https://render.com/deploy?repo=https://github.com/mingchanghello-code/personal-website) and sign in. Connect the GitHub repository if prompted.
 2. Enter the OpenAI API key in the `MING_AI_KEY` secret field. The Codex environment's key is not automatically copied to Render.
 3. Review the service and disk costs, then create the Blueprint. Wait for the service to become Live and open its URL.
-4. Check chat and Life → Places → Edit places. The current configuration allows editing without a password, as requested. Updates save on the persistent disk across restarts and redeploys.
+4. Check chat and Travel → Places → Edit places. The current configuration allows editing without a password, as requested. Updates save on the persistent disk across restarts and redeploys.
 
 For a service created before photo uploads were added, update Settings → Build Command to `npm ci && npm run check && npm test && npm run build` before the first photo deployment. New Blueprint deployments already include this command.
 

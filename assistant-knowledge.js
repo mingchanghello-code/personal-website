@@ -30,8 +30,7 @@ function compileKnowledge(state) {
     facts.push({ id: `site-work-${company}`, title: `${company === 'didi' ? 'DiDi' : company === 'linkedin' ? 'LinkedIn' : company[0].toUpperCase() + company.slice(1)} — Work`, section: 'work', text: `From Ming’s Work page:\n\n${pageText(match[0])}` });
   }
   facts.push({ id: 'site-writing', title: 'Writing', section: 'notes', text: `From Ming’s Writing page:\n\n${pageText(sections.notes)}` });
-  const lifeCategories = [...sections.travel.matchAll(/<details class="project-card life-category"><summary>[\s\S]*?<\/details>/g)].map(match => pageText(match[0]));
-  facts.push({ id: 'site-life', title: 'Life', section: 'travel', text: `From Ming’s Life page (besides Places):\n\n${lifeCategories.join('\n\n')}` });
+  facts.push({ id: 'site-hobbies', title: 'Hobbies', section: 'hobbies', text: `From Ming’s Hobbies page (placeholders; further details have not been added):\n\n${pageText(sections.hobbies)}` });
   const places = sortLifePlaces(state.places.map(place => ({ ...place, country: place.country || seed.find(item => item.lat === place.lat && item.lon === place.lon)?.country })));
   const distinct = lifeDistinctPlaces(places);
   const stats = lifeTravelStats(places);

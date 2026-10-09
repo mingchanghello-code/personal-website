@@ -350,7 +350,6 @@ button:disabled { opacity: 1; }
 .life-category > summary { padding: 20px; }
 .life-category > summary h2 { margin: 0; font-size: 18px; font-weight: 550; }
 .life-category-body { padding: 0 20px 20px; }
-.life-tbd p { margin: 0; font-size: 13px; }
 .hobby-placeholders { display: grid; gap: 12px; margin: 0; padding-left: 18px; font-size: 13px; }
 .places-overview { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; margin-bottom: 26px; }
 .places-stats { display: flex; gap: clamp(22px, 4vw, 42px); margin: 0; }
