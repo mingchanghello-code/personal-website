@@ -47,6 +47,8 @@ The repository includes `render.yaml` for a single Node web service with a 1 GB 
 3. Review the service and disk costs, then create the Blueprint. Wait for the service to become Live and open its URL.
 4. Check chat and Life → Places → Edit places. The current configuration allows editing without a password, as requested. Updates save on the persistent disk across restarts and redeploys.
 
-Render rebuilds and redeploys future changes pushed to `main`. Keep one instance because place storage is file-based. `MING_SITE_DATA_DIR` must continue pointing at the mounted disk. Existing workspace entries are separate from the new hosted installation; the first deployment initializes from `places.seed.json`.
+For automatic updates, connect your GitHub account to Render, link this repository's `main` branch, and set Settings → Auto-Deploy to On Commit. A service created using only a public Git repository URL requires Manual Deploy → Deploy latest commit, even when the Blueprint requests automatic deploys. See [Render's deploy documentation](https://render.com/docs/deploys#automatic-deploys).
+
+Keep one instance because place storage is file-based. `MING_SITE_DATA_DIR` must continue pointing at the mounted disk. Existing workspace entries are separate from the new hosted installation; the first deployment initializes from `places.seed.json`.
 
 To add a domain later, use the service's Settings → Custom Domains and follow Render's DNS instructions. To enable editing protection later, change `MING_SITE_EDIT_PROTECTED` to `true` and set `MING_SITE_EDIT_KEY` in Render's environment settings, then redeploy.
