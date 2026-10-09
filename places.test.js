@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { createPlacesService, validatePlaces } = require('./places');
 const seed = require('./places.seed.json');
+const sharp = require('sharp');
 
 async function fixture(t, options = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-places-test-'));
@@ -26,7 +27,7 @@ async function fixture(t, options = {}) {
     assert.equal(result.status, 200);
     return { Cookie: result.headers['set-cookie'][0].split(';')[0] };
   };
-  return { directory, service, request, unlock };
+  return { directory, service, request, unlock, base: `http://127.0.0.1:${server.address().port}/api/places` };
 }
 
 test('visitors can read places but cannot publish or search locations', async t => {
@@ -144,4 +145,48 @@ test('same-origin preview requests work when a proxy forwards an internal Host',
   assert.equal((await request('/session', 'GET', undefined, headers)).body.canEdit, true);
   await request('/session', 'DELETE', undefined, headers);
   assert.equal((await request('/session', 'GET', undefined, headers)).body.canEdit, false);
+});
+
+test('photo uploads are resized, private metadata is stripped, and attachments persist across restarts', async t => {
+  const { base, request, unlock, directory } = await fixture(t);
+  const input = await sharp({ create: { width: 2000, height: 1000, channels: 3, background: '#123456' } }).jpeg().withMetadata().toBuffer();
+  assert.equal((await fetch(base + '/photos', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: input })).status, 401);
+  const headers = await unlock();
+  const upload = await fetch(base + '/photos', { method: 'POST', headers: { ...headers, 'Content-Type': 'image/jpeg' }, body: input });
+  assert.equal(upload.status, 201); const { id } = await upload.json();
+  const file = await fetch(base + '/photos/' + id); assert.equal(file.status, 200); assert.equal(file.headers.get('content-type'), 'image/webp');
+  const metadata = await sharp(Buffer.from(await file.arrayBuffer())).metadata();
+  assert.equal(metadata.width, 1600); assert.equal(metadata.height, 800); assert.equal(metadata.exif, undefined);
+  const state = (await request('')).body; state.places[0].photos = [id];
+  assert.equal((await request('', 'PUT', state, headers)).status, 200);
+  assert.deepEqual((await request('')).body.places[0].photos, [id]);
+  assert.deepEqual(createPlacesService({ directory, ownerKey: 'test-owner-password', requirePassword: true }).read().places[0].photos, [id]);
+  assert.equal((await request('/photos/' + id, 'DELETE', undefined, headers)).status, 409);
+  const latest = (await request('')).body; latest.places[0].photos = [];
+  assert.equal((await request('', 'PUT', latest, headers)).status, 200);
+  assert.equal((await fetch(base + '/photos/' + id)).status, 404);
+});
+
+test('photos enforce limits, validate real images, reject missing files, and discard staged uploads', async t => {
+  const { base, request } = await fixture(t, { requirePassword: false });
+  assert.equal((await fetch(base + '/photos', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: 'not an image' })).status, 400);
+  assert.equal((await fetch(base + '/photos', { method: 'POST', headers: { 'Content-Type': 'image/svg+xml' }, body: '<svg/>' })).status, 415);
+  const image = await sharp({ create: { width: 10, height: 10, channels: 3, background: '#fff' } }).png().toBuffer();
+  const ids = [];
+  for (let i = 0; i < 4; i++) {
+    const response = await fetch(base + '/photos', { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: image });
+    assert.equal(response.status, 201); ids.push((await response.json()).id);
+  }
+  const state = (await request('')).body;
+  state.places[0].photos = ids;
+  assert.equal((await request('', 'PUT', state)).status, 400);
+  state.places[0].photos = ids.slice(0, 3);
+  assert.equal((await request('', 'PUT', state)).status, 200);
+  assert.equal((await request('/photos/' + ids[3], 'DELETE')).status, 200);
+  assert.equal((await fetch(base + '/photos/' + ids[3])).status, 404);
+  const latest = (await request('')).body; latest.places[1].photos = [ids[3]];
+  assert.equal((await request('', 'PUT', latest)).status, 400);
+  assert.equal((await request('/photos/' + ids[0], 'DELETE', undefined, { Origin: 'https://other.example' })).status, 403);
+  assert.throws(() => validatePlaces([{ ...seed[0], photos: ['../../owner-key.txt'] }]));
+  assert.throws(() => validatePlaces([{ ...seed[0], photos: [ids[0], ids[0]] }]));
 });

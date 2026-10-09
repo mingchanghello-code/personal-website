@@ -6,7 +6,7 @@ services:
     plan: starter
     region: oregon
     branch: main
-    buildCommand: npm run check && npm test && npm run build
+    buildCommand: npm ci && npm run check && npm test && npm run build
     startCommand: node server.js
     healthCheckPath: /api/places
     autoDeployTrigger: commit

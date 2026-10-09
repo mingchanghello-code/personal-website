@@ -4,7 +4,11 @@ A minimalist single-page profile with left navigation and persistent professiona
 
 ## Run
 
-Requires Node.js 24.5 or newer in the cloud environment so AI requests use the platform's HTTPS proxy. No npm dependencies or installation are needed.
+Requires Node.js 24.5 or newer in the cloud environment so AI requests use the platform's HTTPS proxy. Install the locked image-processing dependency before running:
+
+```sh
+npm ci
+```
 
 ```sh
 npm run dev
@@ -29,6 +33,8 @@ The Places overview counts distinct countries and places; repeated visits count 
 Visitors can rotate the globe by dragging or with arrow keys. Enter or Escape returns to the selected place. Clicking a timeline entry or scrolling to a different entry recenters the globe. Manual location picking still requires entering the place editor.
 
 A static monochrome world map beneath the stats marks each distinct place. It updates when entries change and does not pan or zoom.
+
+Each place supports up to three photos. Add them in the place editor, then Save place to publish. Thumbnails open in a larger viewer. Uploads accept JPEG, PNG, and WebP files up to 10 MB each. The browser resizes them before uploading, and the server verifies, resizes to at most 1600 pixels, converts to WebP, and strips metadata. Files live in the persistent data directory's `photos/` subdirectory. Removing a saved photo or deleting its place removes unreferenced files; cancelled uploads are discarded, with old abandoned uploads cleaned up after 24 hours.
 
 Open Places → Edit places to edit directly. Password protection is disabled for this initial version; anyone with the website link can add, update, or remove entries.
 
@@ -56,6 +62,8 @@ The repository includes `render.yaml` for a single Node web service with a 1 GB 
 2. Enter the OpenAI API key in the `MING_AI_KEY` secret field. The Codex environment's key is not automatically copied to Render.
 3. Review the service and disk costs, then create the Blueprint. Wait for the service to become Live and open its URL.
 4. Check chat and Life → Places → Edit places. The current configuration allows editing without a password, as requested. Updates save on the persistent disk across restarts and redeploys.
+
+For a service created before photo uploads were added, update Settings → Build Command to `npm ci && npm run check && npm test && npm run build` before the first photo deployment. New Blueprint deployments already include this command.
 
 For automatic updates, connect your GitHub account to Render, link this repository's `main` branch, and set Settings → Auto-Deploy to On Commit. A service created using only a public Git repository URL requires Manual Deploy → Deploy latest commit, even when the Blueprint requests automatic deploys. See [Render's deploy documentation](https://render.com/docs/deploys#automatic-deploys).
 

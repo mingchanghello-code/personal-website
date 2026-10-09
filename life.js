@@ -43,6 +43,11 @@ function mountLife(root) {
   const editor = $('#place-editor');
   const highlightFields = $('#place-highlight-fields');
   const addHighlight = $('#place-highlight-add');
+  const photoFields = $('#place-photo-fields');
+  const photoInput = $('#place-photo-upload');
+  const addPhoto = $('#place-photo-add');
+  const photoViewer = $('#place-photo-viewer');
+  const viewerImage = $('#place-photo-viewer-image');
   const login = $('#places-login');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const projection = d3.geoOrthographic().translate([140, 140]).scale(119).clipAngle(90);
@@ -54,6 +59,9 @@ function mountLife(root) {
   let requiresPassword = false;
   let saving = false;
   let editingId = null;
+  let editorPhotos = [];
+  const stagedPhotos = new Set();
+  let photosUploading = false;
   let chosenLocation = null;
   let preview = null;
   let picking = false;
@@ -132,14 +140,15 @@ function mountLife(root) {
     const cancel = () => pending.abort();
     signal.addEventListener('abort', cancel, { once: true });
     let timedOut = false;
-    const deadline = setTimeout(() => { timedOut = true; pending.abort(); }, 10000);
+    const binary = data instanceof Blob;
+    const deadline = setTimeout(() => { timedOut = true; pending.abort(); }, binary ? 30000 : 10000);
     try {
       let response;
       try {
         response = await fetch(`/api/places${path}`, {
           method, credentials: 'same-origin', cache: 'no-store', signal: pending.signal,
-          headers: { ...(data === undefined ? {} : { 'Content-Type': 'application/json' }), ...(lifeOwnerToken ? { Authorization: `Bearer ${lifeOwnerToken}` } : {}) },
-          ...(data === undefined ? {} : { body: JSON.stringify(data) })
+          headers: { ...(data === undefined ? {} : { 'Content-Type': binary ? data.type : 'application/json' }), ...(lifeOwnerToken ? { Authorization: `Bearer ${lifeOwnerToken}` } : {}) },
+          ...(data === undefined ? {} : { body: binary ? data : JSON.stringify(data) })
         });
       } catch (error) {
         if (signal.aborted) throw error;
@@ -153,6 +162,56 @@ function mountLife(root) {
       }
       return result;
     } finally { clearTimeout(deadline); signal.removeEventListener('abort', cancel); }
+  }
+  function photoButton(id, index, name) {
+    const button = node('button', 'place-photo'); button.type = 'button';
+    button.setAttribute('aria-label', `View photo ${index + 1} from ${name}`);
+    const image = node('img'); image.src = `/api/places/photos/${id}`; image.alt = `Photo ${index + 1} from ${name}`; image.loading = 'lazy';
+    button.append(image);
+    on(button, 'click', () => { viewerImage.src = image.src; viewerImage.alt = image.alt; photoViewer.showModal(); });
+    return button;
+  }
+  function syncPhotoControls() {
+    addPhoto.disabled = photosUploading || saving || editorPhotos.length >= 3;
+    photoInput.disabled = addPhoto.disabled;
+    editor.querySelector('button[type="submit"]').disabled = photosUploading || saving;
+    $('#place-cancel').disabled = photosUploading || saving;
+    for (const button of photoFields.querySelectorAll('.photo-remove')) button.disabled = photosUploading || saving;
+    for (const button of root.querySelectorAll('.place-entry-actions button, .places-toolbar button')) button.disabled = photosUploading || saving;
+  }
+  function discardStagedPhotos() {
+    const pending = [...stagedPhotos].map(id => request(`/photos/${id}`, 'DELETE'));
+    stagedPhotos.clear();
+    return Promise.allSettled(pending);
+  }
+  function renderEditorPhotos() {
+    photoFields.replaceChildren();
+    editorPhotos.forEach((id, index) => {
+      const tile = node('div', 'place-photo-tile');
+      const remove = node('button', 'photo-remove', 'Remove'); remove.type = 'button'; remove.setAttribute('aria-label', `Remove photo ${index + 1}`);
+      on(remove, 'click', () => {
+        if (photosUploading || saving) return;
+        editorPhotos = editorPhotos.filter(value => value !== id);
+        if (stagedPhotos.delete(id)) request(`/photos/${id}`, 'DELETE').catch(() => {});
+        renderEditorPhotos(); addPhoto.focus({ preventScroll: true });
+      });
+      tile.append(photoButton(id, index, $('#place-location').value || 'this place'), remove); photoFields.append(tile);
+    });
+    syncPhotoControls();
+  }
+  async function preparePhoto(file) {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) throw new Error('Choose JPEG, PNG, or WebP photos smaller than 10 MB.');
+    let image;
+    try { image = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch { throw new Error('This photo could not be opened. Try another image.'); }
+    try {
+      const ratio = Math.min(1, 1600 / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.round(image.width * ratio)); canvas.height = Math.max(1, Math.round(image.height * ratio));
+      const context = canvas.getContext('2d'); context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+      if (!blob) throw new Error('This photo could not be resized.');
+      return blob;
+    } finally { image.close(); }
   }
   function drawGlobe() {
     projection.rotate(rotation);
@@ -265,6 +324,11 @@ function mountLife(root) {
         }
         entry.append(highlights);
       }
+      if (place.photos?.length) {
+        const gallery = node('div', 'place-photos');
+        place.photos.forEach((id, index) => gallery.append(photoButton(id, index, place.name)));
+        entry.append(gallery);
+      }
       if (editing) {
         const actions = node('div', 'place-entry-actions');
         const edit = node('button', '', 'Edit'); edit.type = 'button'; on(edit, 'click', () => showEditor(place));
@@ -307,6 +371,7 @@ function mountLife(root) {
     } finally {
       saving = false;
       for (const button of root.querySelectorAll('.place-form-actions button, .place-entry-actions button, .places-toolbar button')) button.disabled = false;
+      syncPhotoControls();
     }
   }
   function togglePicking(value) {
@@ -317,6 +382,7 @@ function mountLife(root) {
     if (value) globe.setAttribute('aria-label', 'Pick a location. Arrow keys rotate the globe; Enter selects its center.');
   }
   function closeEditor() {
+    discardStagedPhotos(); editorPhotos = [];
     editor.hidden = true; editingId = null; chosenLocation = null; preview = null; togglePicking(false);
     message($('#place-form-status'));
     turnTo(places.find(place => place.id === activeId));
@@ -352,6 +418,8 @@ function mountLife(root) {
     if (focus) input.focus();
   }
   function showEditor(place = null) {
+    if (photosUploading || saving) return;
+    discardStagedPhotos();
     editingId = place?.id || null; editor.reset();
     $('#place-editor-title').textContent = place ? 'Edit place' : 'Add place';
     $('#place-location').value = place?.name || '';
@@ -365,6 +433,7 @@ function mountLife(root) {
     highlightFields.replaceChildren();
     for (const highlight of place?.highlights || []) appendHighlight(highlight);
     syncHighlightFields();
+    editorPhotos = [...(place?.photos || [])]; photoInput.value = ''; renderEditorPhotos(); message($('#place-photo-status'));
     chosenLocation = place ? { name: place.name, lat: place.lat, lon: place.lon, country: place.country } : null;
     preview = null; togglePicking(false);
     $('#place-search-results').replaceChildren(); $('#place-attribution').hidden = true;
@@ -391,7 +460,7 @@ function mountLife(root) {
     button.textContent = editing ? 'Closing…' : 'Opening…';
     try {
     if (editing) {
-      try { await request('/session', 'DELETE'); lifeOwnerToken = null; closeEditor(); editing = false; renderPlaces(); message($('#places-status')); }
+      try { await discardStagedPhotos(); await request('/session', 'DELETE'); lifeOwnerToken = null; closeEditor(); editing = false; renderPlaces(); message($('#places-status')); }
       catch (error) { message($('#places-status'), error.message); }
     } else {
       try {
@@ -419,6 +488,30 @@ function mountLife(root) {
     finally { button.disabled = false; button.textContent = 'Unlock'; login.removeAttribute('aria-busy'); }
   });
   on($('#places-add'), 'click', () => showEditor());
+  on(addPhoto, 'click', () => photoInput.click());
+  on(photoInput, 'change', async () => {
+    const files = [...photoInput.files]; photoInput.value = '';
+    if (!files.length || photosUploading || saving) return;
+    if (files.length + editorPhotos.length > 3) { message($('#place-photo-status'), 'Use up to three photos per place.'); return; }
+    photosUploading = true; syncPhotoControls();
+    try {
+      for (let index = 0; index < files.length; index++) {
+        message($('#place-photo-status'), `Uploading photo ${index + 1} of ${files.length}…`);
+        const photo = await request('/photos', 'POST', await preparePhoto(files[index]));
+        if (signal.aborted) return;
+        stagedPhotos.add(photo.id); editorPhotos.push(photo.id); renderEditorPhotos();
+      }
+      message($('#place-photo-status'));
+    } catch (error) { message($('#place-photo-status'), error.message); }
+    finally { photosUploading = false; if (!signal.aborted) syncPhotoControls(); }
+  });
+  on($('#place-photo-viewer-close'), 'click', () => photoViewer.close());
+  on(photoViewer, 'close', () => viewerImage.removeAttribute('src'));
+  on(photoViewer, 'click', event => {
+    if (event.target !== photoViewer) return;
+    const bounds = photoViewer.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) photoViewer.close();
+  });
   on(addHighlight, 'click', () => { if (!saving) appendHighlight(undefined, true); });
   on($('#place-cancel'), 'click', () => { closeEditor(); $('#places-add').focus({ preventScroll: true }); });
   on($('#place-present'), 'change', () => {
@@ -494,6 +587,7 @@ function mountLife(root) {
   });
   on(editor, 'submit', async event => {
     event.preventDefault();
+    if (photosUploading || saving) return;
     if (!chosenLocation) { message($('#place-form-status'), 'Find the location or pick a point on the globe.'); return; }
     const previous = places.find(place => place.id === editingId);
     const place = {
@@ -502,12 +596,13 @@ function mountLife(root) {
       end: $('#place-present').checked ? null : $('#place-to').value || null, current: $('#place-present').checked,
       lat: chosenLocation.lat, lon: chosenLocation.lon, note: $('#place-note').value.trim(),
       highlights: [...highlightFields.children].map(row => ({ text: row.querySelector('input').value.trim(), icon: row.querySelector('select').value })).filter(item => item.text),
+      photos: [...editorPhotos],
       ...(chosenLocation.country ? { country: chosenLocation.country } : {})
     };
     if (place.start && place.end && place.end < place.start) { message($('#place-form-status'), 'The end date must be after the start date.'); return; }
     const next = editingId ? places.map(item => item.id === editingId ? place : item) : [...places, place];
     try {
-      await savePlaces(next); closeEditor(); message($('#places-status'), 'Saved.');
+      await savePlaces(next); stagedPhotos.clear(); closeEditor(); message($('#places-status'), 'Saved.');
       jumpTo(place.id);
     } catch (error) { message($('#place-form-status'), error.message); }
   });
@@ -520,5 +615,5 @@ function mountLife(root) {
     requiresPassword = session.requiresPassword === true;
     if (!signal.aborted && requiresPassword && session.canEdit) { editing = true; renderPlaces(); }
   }).catch(() => {});
-  return { dispose() { controller.abort(); if (animation !== null) cancelAnimationFrame(animation); if (syncFrame !== null) cancelAnimationFrame(syncFrame); } };
+  return { dispose() { if (photoViewer.open) photoViewer.close(); controller.abort(); if (animation !== null) cancelAnimationFrame(animation); if (syncFrame !== null) cancelAnimationFrame(syncFrame); } };
 }

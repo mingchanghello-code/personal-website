@@ -416,6 +416,20 @@ button:disabled { opacity: 1; }
 .place-highlight-editor button { border: 1px solid #000; border-radius: 5px; background: #fff; color: #000; padding: 6px 10px; font-size: 12px; }
 .place-highlight-editor button:hover { text-decoration: underline; }
 .place-highlight-editor button:disabled { border-style: dashed; cursor: default; }
+.place-photos, .place-photo-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 18px 0 0; }
+.place-photo { display: block; width: 100%; padding: 0; border: 1px solid #000; border-radius: 5px; overflow: hidden; background: #fff; }
+.place-photo img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; }
+.place-photo-editor { border: 0; padding: 0; margin: 0 0 20px; min-width: 0; }
+.place-photo-editor legend { padding: 0; font-size: 12px; }
+.place-photo-fields { margin: 9px 0; }
+.place-photo-editor button:not(.place-photo), .place-photo-viewer button { border: 1px solid #000; border-radius: 5px; padding: 6px 10px; font-size: 12px; background: #fff; color: #000; }
+.place-photo-editor button:disabled { border-style: dashed; }
+.photo-remove { margin-top: 6px; width: 100%; }
+#place-photo-status { font-size: 12px; }
+.place-photo-viewer { max-width: 1000px; width: calc(100vw - 32px); max-height: 90dvh; margin: auto; padding: 16px; border: 1px solid #000; border-radius: 8px; color: #000; background: #fff; }
+.place-photo-viewer::backdrop { background: #000; }
+.place-photo-viewer button { display: block; margin: 0 0 12px auto; }
+.place-photo-viewer img { display: block; width: 100%; max-height: calc(90dvh - 90px); object-fit: contain; }
 .place-entry-actions { display: flex; gap: 8px; margin-top: 20px; }
 .place-entry-actions button { font-size: 11px; }
 .places-login, .place-editor { border: 1px solid #000; border-radius: 8px; padding: 18px; background: #fff; }
