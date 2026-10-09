@@ -4,10 +4,14 @@ const path = require('node:path');
 const { chat } = require('./agent');
 const { createPlacesService } = require('./places');
 const { createKnowledgeStore } = require('./assistant-knowledge');
+const { createWritingService } = require('./writing');
 const directory = process.env.MING_SITE_DATA_DIR || path.join(__dirname, '.data');
 const knowledge = createKnowledgeStore(directory);
-const places = createPlacesService({ directory, onPublish: state => knowledge.update(state) });
-knowledge.update(places.read());
+let places;
+const refreshKnowledge = () => knowledge.update(places.read(), writing.read());
+const writing = createWritingService({ directory, canEdit: req => places.canEdit(req), onPublish: refreshKnowledge });
+places = createPlacesService({ directory, onPublish: refreshKnowledge });
+refreshKnowledge();
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript' };
 const limits = new Map();
 const server = http.createServer(async (req, res) => {
@@ -16,6 +20,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const name = url.pathname;
   if (await places.handle(req, res, url)) return;
+  if (await writing.handle(req, res, url)) return;
   if (name === '/api/chat') {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-store');

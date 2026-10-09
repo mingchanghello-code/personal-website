@@ -80,7 +80,7 @@ function createPlacesService(options = {}) {
     for await (const chunk of req) { raw += chunk; if (Buffer.byteLength(raw) > 180000) throw new Error('Request too large.'); }
     try { return JSON.parse(raw); } catch { throw new Error('Invalid request.'); }
   };
-  const cookie = (req, token, maxAge) => `ming_owner=${token}; Path=/api/places; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${req.socket.encrypted || req.headers.origin?.startsWith('https://') ? '; Secure' : ''}`;
+  const cookie = (req, token, maxAge) => `ming_owner=${token}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${req.socket.encrypted || req.headers.origin?.startsWith('https://') ? '; Secure' : ''}`;
 
   async function handle(req, res, url) {
     if (!/^\/api\/places(?:\/|$)/.test(url.pathname)) return false;
@@ -205,6 +205,6 @@ function createPlacesService(options = {}) {
       send(res, 405, { error: 'Method not allowed.' }); return true;
     } catch (error) { send(res, 400, { error: error.message }); return true; }
   }
-  return { handle, read: () => ({ ...state, places: state.places.map(place => ({ ...place })) }) };
+  return { handle, canEdit: req => Boolean(session(req)), read: () => ({ ...state, places: state.places.map(place => ({ ...place })) }) };
 }
 module.exports = { createPlacesService, validatePlaces };

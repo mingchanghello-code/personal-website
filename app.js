@@ -125,16 +125,20 @@ content.addEventListener('click', e => {
   target?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
 });
 let lifeController = null;
+let writingController = null;
 function render() {
   lifeController?.dispose();
+  writingController?.dispose();
   lifeController = null;
+  writingController = null;
   hideSelectionAsk();
-  const section = location.hash.slice(1) || 'home';
+  const [section, essayId] = (location.hash.slice(1) || 'home').split('/');
   const current = sections[section] ? section : 'home';
   content.innerHTML = sections[current];
   content.classList.toggle('work-page', current === 'work');
   content.classList.toggle('life-content', current === 'travel');
   if (current === 'travel') lifeController = mountLife(content);
+  if (current === 'notes') writingController = mountWriting(content, essayId);
   scheduleCareerSync();
   document.querySelectorAll('nav a').forEach(a => {
     a.classList.toggle('active', a.dataset.section === current);
@@ -264,6 +268,9 @@ document.addEventListener('keydown', e => {
 });
 mobile.addEventListener('change', syncModal);
 window.addEventListener('hashchange', () => {
+  if (writingController?.hasUnsavedChanges() && !window.confirm('Leave this essay and discard unsaved changes?')) {
+    window.history.replaceState(null, '', writingController.route()); return;
+  }
   if (location.hash === '#content') { content.focus({ preventScroll: true }); return; }
   render(); window.scrollTo({ top: 0, behavior: 'instant' }); if (!(mobile.matches && panel.classList.contains('open'))) content.focus({ preventScroll: true });
 });

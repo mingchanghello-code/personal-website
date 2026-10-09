@@ -4,7 +4,7 @@ const read = name => fs.readFileSync(path.join(__dirname, name), 'utf8');
 const app = read('app.js');
 const sections = require('./site-content');
 const licenses = `/* D3 library licenses\n${read('vendor/d3-array.LICENSE')}\n${read('vendor/d3-geo.LICENSE')}\n*/`;
-const client = [licenses, read('vendor/d3-array.min.js'), read('vendor/d3-geo.min.js'), read('globe-land.js'), `const LIFE_DEFAULT_PLACES = ${read('places.seed.json')};`, `const LIFE_HIGHLIGHT_ICONS = ${read('highlight-icons.json')};`, read('place-utils.js'), read('site-content.js'), read('life.js'), app].join('\n');
+const client = [licenses, read('vendor/d3-array.min.js'), read('vendor/d3-geo.min.js'), read('globe-land.js'), `const LIFE_DEFAULT_PLACES = ${read('places.seed.json')};`, `const LIFE_DEFAULT_ESSAYS = ${read('writing.seed.json')};`, `const LIFE_HIGHLIGHT_ICONS = ${read('highlight-icons.json')};`, read('place-utils.js'), read('writing-document.js'), read('site-content.js'), read('life.js'), read('writing-client.js'), app].join('\n');
 // Compile the checked-in, trusted section templates into a visible initial page.
 const home = sections.home;
 const html = read('page.template.html')

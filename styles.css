@@ -351,6 +351,41 @@ button:disabled { opacity: 1; }
 .life-category > summary h2 { margin: 0; font-size: 18px; font-weight: 550; }
 .life-category-body { padding: 0 20px 20px; }
 .hobby-placeholders { display: grid; gap: 12px; margin: 0; padding-left: 18px; font-size: 13px; }
+.writing-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+.writing-heading h1 { margin-bottom: 0; max-width: 100%; overflow-wrap: anywhere; }
+.writing-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.writing-actions button, .essay-toolbar button, .essay-picture button { color: #000; background: #fff; border: 1px solid #000; border-radius: 5px; padding: 6px 10px; font-size: 12px; }
+.writing-actions a { font-size: 12px; text-decoration: underline; }
+.essay-list { list-style: none; padding: 0; margin: 0; }
+.essay-row { padding: 24px 0; border-bottom: 1px solid #000; }
+.essay-row:first-child { padding-top: 8px; }
+.essay-row:last-child { border-bottom: 0; }
+.essay-link { display: block; }
+.essay-link h2 { margin: 0 0 8px; font-size: 21px; font-weight: 550; overflow-wrap: anywhere; }
+.essay-link:hover h2 { text-decoration: underline; }
+.essay-meta, .essay-date { font-size: 12px; }
+.essay-row .essay-excerpt { margin: 8px 0 0; font-size: 13px; }
+.essay-row .writing-actions { margin-top: 12px; }
+.essay-date { display: block; margin-top: 16px; }
+.essay-body { margin-top: 32px; overflow-wrap: anywhere; }
+.essay-body h2 { font-size: 22px; font-weight: 550; margin: 32px 0 16px; }
+.essay-body p, .essay-body li, .essay-body blockquote { line-height: 1.9; white-space: pre-wrap; }
+.essay-body blockquote { border-left: 2px solid #000; padding-left: 20px; margin: 24px 0; }
+.essay-body strong, .essay-body b { font-weight: 700; }
+.essay-title-label { display: grid; gap: 8px; font-size: 12px; }
+.essay-title-label input, .writing-page > input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #000; border-radius: 5px; background: #fff; color: #000; font: inherit; }
+.essay-title-label input { font-size: 20px; }
+.essay-toolbar { display: flex; gap: 7px; flex-wrap: wrap; margin: 18px 0 12px; }
+.essay-toolbar button:focus-visible { outline-offset: 2px; }
+.essay-toolbar input[hidden] { display: none; }
+.essay-editor { min-height: 350px; border: 1px solid #000; border-radius: 6px; padding: 18px; margin: 0 0 20px; }
+.essay-editor:focus { outline: 2px solid #000; outline-offset: 2px; }
+.essay-editor p { margin: 0 0 16px; }
+.essay-picture { margin: 24px 0; }
+.essay-picture img { display: block; max-width: 100%; height: auto; border-radius: 4px; }
+.essay-picture button { margin-top: 8px; }
+.writing-status { font-size: 12px !important; }
+@media (max-width: 600px) { .essay-toolbar button { padding: 6px 8px; } .essay-editor { padding: 12px; } .essay-link h2 { font-size: 19px; } }
 .places-overview { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; margin-bottom: 26px; }
 .places-stats { display: flex; gap: clamp(22px, 4vw, 42px); margin: 0; }
 .places-stats > div { display: flex; flex-direction: column-reverse; gap: 3px; }

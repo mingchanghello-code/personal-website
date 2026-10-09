@@ -44,9 +44,19 @@ Entries save atomically to `.data/places.json` and are shared with all visitors.
 
 Location search uses Photon / OpenStreetMap through the server and displays attribution. A manual globe picker works when search is unavailable, including arrow-key rotation and Enter to select the center. The globe uses bundled D3 libraries (licenses in `vendor/`) and public-domain Natural Earth outlines from world-atlas 2. No external requests are needed to render it.
 
+## Writing
+
+Writing lists published essays, newest first. Each has a stable link such as `/#notes/time-well-spent`. The previous Writing page is preserved as the initial essay, “Time well spent,” without an invented publication date.
+
+New essay opens a simple editor with a title, plain text, bold, italic, underline, headings, quotes, lists, and pictures. Save draft keeps it out of the public essay list; Publish makes it readable at its link. Manage writing shows drafts and archived essays and offers Edit, Archive, and Restore. Restoring an archived draft keeps it a draft. Archiving hides an essay from the public list and its reading link but preserves the text and pictures for restoration.
+
+Writing shares Places' editing access. With password protection disabled, anyone can enter editing mode and access drafts and archives; these are not private. In protected mode, unlock editing through Travel first. Unsaved changes prompt before leaving the editor. Essays are stored atomically in the persistent data directory's `writing/essays.json`; essay pictures use `writing/photos/`. Existing Places data remains separate. Revisions prevent editors from silently overwriting each other.
+
+Each essay supports up to 10 JPEG, PNG, or WebP pictures. Uploads are resized and stripped of metadata like Places photos. The combined stored pictures share the existing 800 MB limit within the 1 GB disk. Removed essay pictures are cleaned up when saved; archived and draft pictures remain stored. Cancelled uploads are discarded, and old abandoned uploads are cleaned up after 24 hours. Formatting is stored as validated text and structured blocks, never arbitrary HTML or executable URLs.
+
 ## Profile assistant
 
-`knowledge.json` is the approved public knowledge base, derived from the profile Ming supplied in October 2026. Edit it to add or update facts; restart the server to reload them. The UI content lives in `app.js`.
+`knowledge.json` contains the public profile supplied by Ming. Page templates live in `site-content.js`. On startup and whenever Places or Writing is saved, the server refreshes `assistant-knowledge.json` in the persistent data directory and caches it in memory. It includes shared page content, published Places descriptions and highlights, and text from published essays. Drafts and archived essays are excluded. Chat searches this cached knowledge locally and sends only relevant records to AI; it does not fetch or scrape the website per question.
 
 Without credentials, chat uses a clearly labelled local profile search. For AI question interpretation and conversational follow-ups, securely set `MING_AI_KEY` to an OpenAI API key on the server. `MING_AI_MODEL` optionally overrides the default `gpt-4.1-mini`. Never place a key in frontend files or commit it. AI mode sends the public profile and up to six recent conversation messages to OpenAI; conversations otherwise remain in browser memory and are not logged or stored by this app.
 

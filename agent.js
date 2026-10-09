@@ -33,6 +33,8 @@ const companyFacts = [
   ['didi', /\bdidi\b|di di|didi pay/i], ['fast', /\bfast\b|payment-processing/i]
 ];
 function directFactIds(question, knowledge) {
+  const essay = knowledge.facts.find(fact => fact.essayId && question.toLowerCase().includes(fact.title.toLowerCase()));
+  if (essay) return [essay.id];
   if (vacationDestinationQuestion.test(question)) return knowledge.facts.some(fact => fact.id === 'travel') ? ['travel'] : [];
   if (broadPlacesQuestion.test(question)) return knowledge.facts.some(fact => fact.id === 'places-overview') ? ['places-overview'] : [];
   const mentionedCompanies = companyFacts.filter(([, pattern]) => pattern.test(question));
@@ -67,6 +69,7 @@ function rankFacts(question, knowledge) {
     if (fact.id === 'site-writing' && topics.some(topic => ['philosophy', 'writing', 'teams', 'speed', 'complexity'].includes(topic))) score += 3;
     if (travelQuestion.test(question) && ['places-overview', 'places-stats', 'travel'].includes(fact.id)) score += 4;
     if (fact.location && query.includes(normalize(fact.location.split(',')[0]))) score += 20;
+    if (fact.essayId && query.includes(normalize(fact.title))) score += 20;
     return { fact, score, index };
   }).filter(item => item.score > 0).sort((a, b) => b.score - a.score || a.index - b.index);
 }

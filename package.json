@@ -9,8 +9,8 @@
     "build": "node build.js",
     "dev": "node build.js && node server.js",
     "start": "node build.js && node server.js",
-    "check": "node --check app.js && node --check life.js && node --check places.js && node --check photos.js && node --check server.js && node --check agent.js && node --check build.js",
-    "test": "node --test agent.test.js places.test.js"
+    "check": "node --check app.js && node --check life.js && node --check places.js && node --check photos.js && node --check server.js && node --check agent.js && node --check build.js && node --check writing.js && node --check writing-client.js && node --check writing-document.js && node --check assistant-knowledge.js && node --check site-content.js",
+    "test": "node --test agent.test.js places.test.js writing.test.js"
   },
   "dependencies": {
     "sharp": "0.35.5"

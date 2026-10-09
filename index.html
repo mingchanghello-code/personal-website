@@ -359,6 +359,41 @@ button:disabled { opacity: 1; }
 .life-category > summary h2 { margin: 0; font-size: 18px; font-weight: 550; }
 .life-category-body { padding: 0 20px 20px; }
 .hobby-placeholders { display: grid; gap: 12px; margin: 0; padding-left: 18px; font-size: 13px; }
+.writing-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+.writing-heading h1 { margin-bottom: 0; max-width: 100%; overflow-wrap: anywhere; }
+.writing-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.writing-actions button, .essay-toolbar button, .essay-picture button { color: #000; background: #fff; border: 1px solid #000; border-radius: 5px; padding: 6px 10px; font-size: 12px; }
+.writing-actions a { font-size: 12px; text-decoration: underline; }
+.essay-list { list-style: none; padding: 0; margin: 0; }
+.essay-row { padding: 24px 0; border-bottom: 1px solid #000; }
+.essay-row:first-child { padding-top: 8px; }
+.essay-row:last-child { border-bottom: 0; }
+.essay-link { display: block; }
+.essay-link h2 { margin: 0 0 8px; font-size: 21px; font-weight: 550; overflow-wrap: anywhere; }
+.essay-link:hover h2 { text-decoration: underline; }
+.essay-meta, .essay-date { font-size: 12px; }
+.essay-row .essay-excerpt { margin: 8px 0 0; font-size: 13px; }
+.essay-row .writing-actions { margin-top: 12px; }
+.essay-date { display: block; margin-top: 16px; }
+.essay-body { margin-top: 32px; overflow-wrap: anywhere; }
+.essay-body h2 { font-size: 22px; font-weight: 550; margin: 32px 0 16px; }
+.essay-body p, .essay-body li, .essay-body blockquote { line-height: 1.9; white-space: pre-wrap; }
+.essay-body blockquote { border-left: 2px solid #000; padding-left: 20px; margin: 24px 0; }
+.essay-body strong, .essay-body b { font-weight: 700; }
+.essay-title-label { display: grid; gap: 8px; font-size: 12px; }
+.essay-title-label input, .writing-page > input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #000; border-radius: 5px; background: #fff; color: #000; font: inherit; }
+.essay-title-label input { font-size: 20px; }
+.essay-toolbar { display: flex; gap: 7px; flex-wrap: wrap; margin: 18px 0 12px; }
+.essay-toolbar button:focus-visible { outline-offset: 2px; }
+.essay-toolbar input[hidden] { display: none; }
+.essay-editor { min-height: 350px; border: 1px solid #000; border-radius: 6px; padding: 18px; margin: 0 0 20px; }
+.essay-editor:focus { outline: 2px solid #000; outline-offset: 2px; }
+.essay-editor p { margin: 0 0 16px; }
+.essay-picture { margin: 24px 0; }
+.essay-picture img { display: block; max-width: 100%; height: auto; border-radius: 4px; }
+.essay-picture button { margin-top: 8px; }
+.writing-status { font-size: 12px !important; }
+@media (max-width: 600px) { .essay-toolbar button { padding: 6px 8px; } .essay-editor { padding: 12px; } .essay-link h2 { font-size: 19px; } }
 .places-overview { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; margin-bottom: 26px; }
 .places-stats { display: flex; gap: clamp(22px, 4vw, 42px); margin: 0; }
 .places-stats > div { display: flex; flex-direction: column-reverse; gap: 3px; }
@@ -598,6 +633,29 @@ const LIFE_DEFAULT_PLACES = [
   {"id":"bay-area","name":"San Francisco Bay Area","start":"2013","end":null,"current":true,"lat":37.7749,"lon":-122.4194,"country":"US","note":"Home since 2013."}
 ]
 ;
+const LIFE_DEFAULT_ESSAYS = [
+  {
+    "id": "time-well-spent",
+    "title": "Time well spent",
+    "status": "published",
+    "createdAt": null,
+    "updatedAt": null,
+    "publishedAt": null,
+    "blocks": [
+      {"type":"paragraph","content":[{"text":"What I spend it on.\nHow I spend it."}]},
+      {"type":"paragraph","content":[{"text":"As I get older, I care a little less about money and a lot more about the time I spend working. These are a few things that matter to me."}]},
+      {"type":"heading","content":[{"text":"Make a reasonable bet. Keep moving."}]},
+      {"type":"paragraph","content":[{"text":"Every product decision is a bet, and every bet comes with some risk. I'm comfortable with that. I'd rather make progress, learn something, and keep moving than spend weeks debating because nobody wants to make the call."}]},
+      {"type":"heading","content":[{"text":"Write to make things simple."}]},
+      {"type":"paragraph","content":[{"text":"When things get messy, I write a short essay explaining what matters, what doesn't, and why. The process of writing is how I figure things out myself. Thinking through what I want to say is part of the work."}]},
+      {"type":"heading","content":[{"text":"Stay close to people who care."}]},
+      {"type":"paragraph","content":[{"text":"People come for the work, but they stay for the people. Teammates who care push each other, hold each other accountable, and challenge ideas without questioning intentions."}]},
+      {"type":"heading","content":[{"text":"Real people, real problems."}]},
+      {"type":"paragraph","content":[{"text":"I'd rather work on a product with 10,000 users I can talk to every day than one with a billion users who exist only as generic personas and numbers on a dashboard."}]}
+    ]
+  }
+]
+;
 const LIFE_HIGHLIGHT_ICONS = {
   "bullet": { "label": "Bullet", "svg": "<circle cx=\"12\" cy=\"12\" r=\"2\" fill=\"currentColor\"/>" },
   "food": { "label": "Food", "svg": "<path d=\"M4 3v6a3 3 0 0 0 6 0V3M7 3v18M19 3c-4 3-4 7 0 9V3Zm0 9v9\"/>" },
@@ -639,6 +697,41 @@ function lifeTravelStats(places) {
 }
 if (typeof module !== 'undefined' && module.exports) module.exports = { sortLifePlaces, lifeDistinctPlaces, lifeTravelStats };
 
+// Plain text plus a small formatting vocabulary. No stored HTML, CSS, or executable URLs.
+function writingPlainText(blocks) {
+  return blocks.map(block => block.type === 'image' ? '' : block.items ? block.items.map(item => item.map(run => run.text).join('')).join('\n') : block.content.map(run => run.text).join('')).filter(Boolean).join('\n\n');
+}
+function writingPhotoIds(essays) { return new Set(essays.flatMap(essay => essay.blocks.filter(block => block.type === 'image').map(block => block.photoId))); }
+function validateWritingBlocks(blocks) {
+  if (!Array.isArray(blocks) || !blocks.length || blocks.length > 500) throw new Error('Write an essay with at most 500 paragraphs.');
+  let total = 0, images = 0;
+  const runs = values => {
+    if (!Array.isArray(values) || values.length > 1000) throw new Error('Check the essay formatting.');
+    return values.map(run => {
+      if (!run || typeof run.text !== 'string' || run.text.length > 100000 || ['bold', 'italic', 'underline'].some(mark => run[mark] !== undefined && typeof run[mark] !== 'boolean')) throw new Error('Check the essay text.');
+      total += run.text.length;
+      return { text: run.text, ...(run.bold ? { bold: true } : {}), ...(run.italic ? { italic: true } : {}), ...(run.underline ? { underline: true } : {}) };
+    });
+  };
+  const clean = blocks.map(block => {
+    if (!block) throw new Error('Check the essay content.');
+    if (['paragraph', 'heading', 'quote'].includes(block.type)) return { type: block.type, content: runs(block.content) };
+    if (['unordered-list', 'ordered-list'].includes(block.type)) {
+      if (!Array.isArray(block.items) || !block.items.length || block.items.length > 100) throw new Error('Use at most 100 items per list.');
+      return { type: block.type, items: block.items.map(runs) };
+    }
+    if (block.type === 'image') {
+      if (++images > 10 || typeof block.photoId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(block.photoId)) throw new Error('Use up to 10 uploaded pictures per essay.');
+      return { type: 'image', photoId: block.photoId };
+    }
+    throw new Error('Unsupported essay formatting.');
+  });
+  if (total > 100000) throw new Error('Keep the essay under 100,000 characters.');
+  if (!writingPlainText(clean).trim() && !images) throw new Error('Add some text or a picture.');
+  return clean;
+}
+if (typeof module !== 'undefined' && module.exports) module.exports = { writingPlainText, writingPhotoIds, validateWritingBlocks };
+
 // Company marks are embedded, with monochrome fills supplied by CSS.
 // Meta/Google: Simple Icons; LinkedIn: Simple Icons v11; DiDi: Wikimedia DiDi_Logo.svg.
 // Fast: F from fast-af/devportal/images/fastDocsLogo.svg (the company’s developer portal).
@@ -672,7 +765,7 @@ const sections = {
     </div></details>
   </div><dialog id="place-photo-viewer" class="place-photo-viewer" aria-label="Photo viewer"><button type="button" id="place-photo-viewer-close">Close</button><img id="place-photo-viewer-image" alt="Place photo"></dialog></section>`,
   hobbies: `<section class="detail"><h1>Hobbies</h1><ul class="hobby-placeholders"><li>Swimming</li><li>Raising chickens</li><li>Woodwork</li></ul></section>`,
-  notes: `<section class="detail"><div class="profile-kicker">HOW I THINK ABOUT MY CAREER</div><h1>Time well spent</h1><p class="section-intro">What I spend it on.<br>How I spend it.</p><p>As I get older, I care a little less about money and a lot more about the time I spend working. These are a few things that matter to me.</p><section class="detail-block"><span class="note-number">01</span><h2>Make a reasonable bet. Keep moving.</h2><p>Every product decision is a bet, and every bet comes with some risk. I'm comfortable with that. I'd rather make progress, learn something, and keep moving than spend weeks debating because nobody wants to make the call.</p></section><section class="detail-block"><span class="note-number">02</span><h2>Write to make things simple.</h2><p>When things get messy, I write a short essay explaining what matters, what doesn't, and why. The process of writing is how I figure things out myself. Thinking through what I want to say is part of the work.</p></section><section class="detail-block"><span class="note-number">03</span><h2>Stay close to people who care.</h2><p>People come for the work, but they stay for the people. Teammates who care push each other, hold each other accountable, and challenge ideas without questioning intentions.</p></section><section class="detail-block"><span class="note-number">04</span><h2>Real people, real problems.</h2><p>I'd rather work on a product with 10,000 users I can talk to every day than one with a billion users who exist only as generic personas and numbers on a dashboard.</p></section><button class="button" data-question="How does Ming approach product decisions?">Ask about my approach <span><svg class="arrow-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span></button></section>`
+  notes: `<section class="detail writing-page"><h1>Writing</h1><p class="writing-status" role="status">Loading essays…</p></section>`
 };
 
 // The browser and the assistant share these checked-in page templates.
@@ -1277,6 +1370,293 @@ function mountLife(root) {
   return { dispose() { if (photoViewer.open) photoViewer.close(); controller.abort(); if (animation !== null) cancelAnimationFrame(animation); if (syncFrame !== null) cancelAnimationFrame(syncFrame); } };
 }
 
+let writingManageMode = false;
+function mountWriting(root, requestedId = null) {
+  const controller = new AbortController();
+  const signal = controller.signal;
+  const page = root.querySelector('.writing-page');
+  let state = { revision: null, essays: LIFE_DEFAULT_ESSAYS };
+  let canEdit = false, dirty = false, busy = false, editing = null, editor = null, title = null, bookmark = null;
+  let currentRoute = location.hash || '#notes';
+  const staged = new Set();
+  const node = (tag, text, className) => {
+    const element = document.createElement(tag);
+    if (text !== undefined) element.textContent = text;
+    if (className) element.className = className;
+    return element;
+  };
+  const on = (element, event, fn, options = {}) => element.addEventListener(event, fn, { ...options, signal });
+  const button = (text, action, className) => { const el = node('button', text, className); el.type = 'button'; on(el, 'click', action); return el; };
+  const link = (text, hash) => { const el = node('a', text); el.href = hash; return el; };
+  function status(text) {
+    let el = page.querySelector('.writing-status');
+    if (!el) { el = node('p', undefined, 'writing-status'); el.setAttribute('role', 'status'); page.append(el); }
+    el.textContent = text; el.hidden = !text;
+  }
+  async function request(path = '', method = 'GET', data) {
+    const binary = data instanceof Blob;
+    const response = await fetch(`/api/writing${path}`, {
+      method, credentials: 'same-origin', signal: AbortSignal.any([signal, AbortSignal.timeout(binary ? 30000 : 10000)]),
+      headers: { ...(data === undefined ? {} : { 'Content-Type': binary ? data.type : 'application/json' }), ...(lifeOwnerToken ? { Authorization: `Bearer ${lifeOwnerToken}` } : {}) },
+      ...(data === undefined ? {} : { body: binary ? data : JSON.stringify(data) })
+    });
+    if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('Couldn’t reach the writing server.');
+    const result = await response.json();
+    if (!response.ok) { const error = new Error(result.error || 'Couldn’t save writing.'); error.status = response.status; throw error; }
+    return result;
+  }
+  function dated(essay) {
+    return essay.publishedAt ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(essay.publishedAt)) : '';
+  }
+  function appendRuns(parent, runs) {
+    for (const run of runs) {
+      let child = document.createTextNode(run.text);
+      for (const [mark, tag] of [['bold', 'strong'], ['italic', 'em'], ['underline', 'u']]) if (run[mark]) { const wrapper = node(tag); wrapper.append(child); child = wrapper; }
+      parent.append(child);
+    }
+  }
+  function renderBlocks(container, blocks, editable = false) {
+    for (const block of blocks) {
+      if (block.type === 'image') {
+        const figure = node('figure', undefined, 'essay-picture'); figure.dataset.photoId = block.photoId;
+        const image = node('img'); image.src = `/api/writing/photos/${block.photoId}`; image.alt = 'Picture included in the essay';
+        figure.append(image);
+        if (editable) {
+          figure.contentEditable = 'false';
+          figure.append(button('Remove picture', () => { figure.remove(); dirty = true; editor.focus(); }));
+        }
+        container.append(figure); continue;
+      }
+      if (block.items) {
+        const list = node(block.type === 'ordered-list' ? 'ol' : 'ul');
+        for (const item of block.items) { const li = node('li'); appendRuns(li, item); list.append(li); }
+        container.append(list); continue;
+      }
+      const el = node(block.type === 'heading' ? 'h2' : block.type === 'quote' ? 'blockquote' : 'p');
+      appendRuns(el, block.content); if (!el.childNodes.length) el.append(node('br'));
+      container.append(el);
+    }
+  }
+  function header(titleText) { page.replaceChildren(); const heading = node('div', undefined, 'writing-heading'); heading.append(node('h1', titleText)); page.append(heading); return heading; }
+  function actions(parent) { const bar = node('div', undefined, 'writing-actions'); parent.append(bar); return bar; }
+  function showList() {
+    editing = null; editor = null; dirty = false;
+    const bar = actions(header('Writing'));
+    if (canEdit) {
+      bar.append(button('New essay', () => showEditor(null)));
+      bar.append(button(writingManageMode ? 'Done editing' : 'Manage writing', async () => {
+        writingManageMode = !writingManageMode;
+        try { state = await request(writingManageMode ? '?manage=1' : ''); showList(); } catch (error) { status(error.message); }
+      }));
+    }
+    const list = node('ul', undefined, 'essay-list');
+    const essays = state.essays.filter(essay => writingManageMode || essay.status === 'published').sort((a, b) => (b.publishedAt || b.updatedAt || '').localeCompare(a.publishedAt || a.updatedAt || ''));
+    for (const essay of essays) {
+      const row = node('li', undefined, 'essay-row');
+      const essayLink = link(essay.title, `#notes/${essay.id}`); essayLink.className = 'essay-link';
+      const copy = node('div'); copy.append(node('h2', essay.title));
+      const meta = [dated(essay), writingManageMode && essay.status !== 'published' ? essay.status : ''].filter(Boolean).join(' · ');
+      if (meta) copy.append(node('span', meta, 'essay-meta'));
+      const excerpt = writingPlainText(essay.blocks).replace(/\s+/g, ' ').trim();
+      if (excerpt) copy.append(node('p', excerpt.length > 180 ? `${excerpt.slice(0, 180).trimEnd()}…` : excerpt, 'essay-excerpt'));
+      // The title is repeated only inside the accessible link, never injected as HTML.
+      essayLink.replaceChildren(copy); row.append(essayLink);
+      if (canEdit && writingManageMode) {
+        const controls = actions(row);
+        controls.append(button('Edit', () => showEditor(essay)));
+        controls.append(button(essay.status === 'archived' ? 'Restore' : 'Archive', () => changeStatus(essay, essay.status === 'archived' ? essay.archivedStatus || 'published' : 'archived')));
+      }
+      list.append(row);
+    }
+    page.append(list);
+    if (!essays.length) page.append(node('p', 'No essays published yet.'));
+  }
+  function showEssay(essay) {
+    header(essay.title);
+    const bar = actions(page); bar.append(link('← Writing', '#notes'));
+    if (essay.status === 'published') bar.append(button('Copy link', async () => {
+      const url = new URL(location.href); url.hash = `notes/${essay.id}`;
+      try { await navigator.clipboard.writeText(url.href); status('Link copied.'); }
+      catch { const copy = node('input'); copy.type = 'text'; copy.readOnly = true; copy.value = url.href; copy.setAttribute('aria-label', 'Essay link'); page.append(copy); copy.select(); }
+    }));
+    if (canEdit) bar.append(button('Edit', () => showEditor(essay)));
+    if (essay.publishedAt) page.append(node('time', dated(essay), 'essay-date'));
+    if (essay.status !== 'published') page.append(node('p', essay.status, 'essay-meta'));
+    const body = node('article', undefined, 'essay-body'); renderBlocks(body, essay.blocks); page.append(body);
+  }
+  function elementMarks(child, marks) {
+    const next = { ...marks };
+    if (['B', 'STRONG'].includes(child.tagName) || child.style.fontWeight === 'bold' || Number(child.style.fontWeight) >= 600) next.bold = true;
+    if (['I', 'EM'].includes(child.tagName) || child.style.fontStyle === 'italic') next.italic = true;
+    if (child.tagName === 'U' || child.style.textDecoration.includes('underline')) next.underline = true;
+    return next;
+  }
+  function inlineRuns(parent, marks = {}) {
+    const result = [];
+    for (const child of parent.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) { result.push({ text: child.textContent, ...marks }); continue; }
+      if (child.nodeType !== Node.ELEMENT_NODE || ['SCRIPT', 'STYLE', 'BUTTON', 'IMG'].includes(child.tagName)) continue;
+      if (child.tagName === 'BR') { result.push({ text: '\n', ...marks }); continue; }
+      const next = elementMarks(child, marks);
+      result.push(...inlineRuns(child, next));
+    }
+    return result;
+  }
+  function serializeEditor() {
+    const blocks = [];
+    let pending = [];
+    const flush = () => { if (pending.length) { blocks.push({type: 'paragraph', content: pending}); pending = []; } };
+    function visit(element, marks = {}) {
+      for (const child of element.childNodes) {
+        if (child.nodeType === Node.TEXT_NODE) { pending.push({text: child.textContent, ...marks}); continue; }
+        if (child.nodeType !== Node.ELEMENT_NODE || ['SCRIPT', 'STYLE', 'BUTTON'].includes(child.tagName)) continue;
+        if (child.matches('figure[data-photo-id]')) { flush(); blocks.push({type: 'image', photoId: child.dataset.photoId}); continue; }
+        if (child.querySelector('figure[data-photo-id]')) { flush(); visit(child, elementMarks(child, marks)); flush(); continue; }
+        if (['UL', 'OL'].includes(child.tagName)) { flush(); blocks.push({type: child.tagName === 'UL' ? 'unordered-list' : 'ordered-list', items: [...child.children].filter(el => el.tagName === 'LI').map(el => inlineRuns(el))}); continue; }
+        if (['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'BLOCKQUOTE'].includes(child.tagName)) {
+          flush();
+          if (child.querySelector('figure, p, div, ul, ol')) { visit(child); flush(); }
+          else blocks.push({type: child.tagName.startsWith('H') ? 'heading' : child.tagName === 'BLOCKQUOTE' ? 'quote' : 'paragraph', content: inlineRuns(child)});
+          continue;
+        }
+        pending.push(...inlineRuns({childNodes: [child]}, marks));
+      }
+    }
+    visit(editor); flush();
+    return validateWritingBlocks(blocks);
+  }
+  function rememberSelection() {
+    const selection = window.getSelection();
+    if (editor && selection?.rangeCount && editor.contains(selection.anchorNode) && editor.contains(selection.focusNode)) bookmark = selection.getRangeAt(0).cloneRange();
+  }
+  function restoreSelection() {
+    editor.focus();
+    if (bookmark && editor.contains(bookmark.commonAncestorContainer)) { const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(bookmark); }
+  }
+  function setBusy(value) {
+    busy = value;
+    for (const control of page.querySelectorAll('button, input')) control.disabled = value;
+    if (editor) editor.contentEditable = value ? 'false' : 'true';
+  }
+  async function discardUploads() {
+    const ids = [...staged]; staged.clear();
+    await Promise.allSettled(ids.map(id => request(`/photos/${id}`, 'DELETE')));
+  }
+  async function save(statusValue) {
+    if (busy) return;
+    const essayTitle = title.value.trim();
+    if (!essayTitle) { status('Add a title.'); title.focus(); return; }
+    let blocks; try { blocks = serializeEditor(); } catch (error) { status(error.message); return; }
+    setBusy(true); status('Saving…');
+    try {
+      const id = editing?.id || `${essayTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 55) || 'essay'}-${crypto.randomUUID().slice(0, 8)}`;
+      const result = await request('', 'POST', {revision: state.revision, essay: {id, title: essayTitle, blocks, status: statusValue}});
+      state.revision = result.revision;
+      state.essays = [...state.essays.filter(item => item.id !== id), result.essay];
+      const used = writingPhotoIds([result.essay]);
+      for (const photoId of used) staged.delete(photoId);
+      await discardUploads(); dirty = false; busy = false;
+      writingManageMode = true;
+      if (location.hash === `#notes/${id}`) showEssay(result.essay); else location.hash = `notes/${id}`;
+    } catch (error) {
+      setBusy(false); status(error.message);
+      if (error.status === 409 && !page.querySelector('.writing-reload')) {
+        const reload = button('Reload saved version', async () => {
+          if (dirty && !window.confirm('Discard unsaved text and load the latest saved version?')) return;
+          try {
+            const data = await request('?manage=1'); await discardUploads(); state = data; dirty = false;
+            showEditor(state.essays.find(item => item.id === editing?.id) || null);
+          } catch (error) { status(error.message); }
+        }, 'writing-reload');
+        page.querySelector('.writing-actions:last-of-type')?.append(reload);
+      }
+    }
+  }
+  async function changeStatus(essay, statusValue) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await request('', 'POST', {revision: state.revision, essay: {...essay, status: statusValue}});
+      state.revision = result.revision; state.essays = state.essays.map(item => item.id === essay.id ? result.essay : item);
+      busy = false; showList(); status(statusValue === 'archived' ? 'Archived.' : 'Restored.');
+    } catch (error) { setBusy(false); status(error.message); }
+  }
+  async function uploadPicture(file) {
+    if (busy) return;
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) { status('Choose a JPEG, PNG, or WebP picture under 10 MB.'); return; }
+    let blocks; try { blocks = serializeEditor(); } catch { blocks = []; }
+    if (blocks.filter(block => block.type === 'image').length >= 10) { status('Use up to 10 pictures per essay.'); return; }
+    setBusy(true); status('Uploading picture…');
+    try {
+      const bitmap = await createImageBitmap(file);
+      const ratio = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.round(bitmap.width * ratio)); canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
+      const context = canvas.getContext('2d'); context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', .86));
+      if (!blob) throw new Error('Couldn’t read that picture.');
+      const uploaded = await request('/photos', 'POST', blob); staged.add(uploaded.id);
+      setBusy(false); restoreSelection();
+      const fragment = document.createDocumentFragment(); renderBlocks(fragment, [{type:'image', photoId:uploaded.id}], true);
+      const following = node('p'); following.append(node('br')); fragment.append(following);
+      const selection = window.getSelection();
+      if (selection.rangeCount && editor.contains(selection.anchorNode)) {
+        const range = selection.getRangeAt(0);
+        let block = range.endContainer;
+        if (block === editor) block = editor.childNodes[Math.max(0, range.endOffset - 1)];
+        while (block && block.parentNode !== editor) block = block.parentNode;
+        if (block && block !== editor) block.after(fragment); else editor.append(fragment);
+      } else editor.append(fragment);
+      const caret = document.createRange(); caret.selectNodeContents(following); caret.collapse(true);
+      selection.removeAllRanges(); selection.addRange(caret);
+      dirty = true; rememberSelection(); status('');
+    } catch (error) { setBusy(false); status(error.message); }
+  }
+  function showEditor(essay) {
+    writingManageMode = true; editing = essay; dirty = false; bookmark = null;
+    header(essay ? 'Edit essay' : 'New essay');
+    const titleLabel = node('label', 'Title', 'essay-title-label');
+    title = node('input'); title.id = 'essay-title'; title.type = 'text'; title.maxLength = 200; title.value = essay?.title || ''; titleLabel.append(title); page.append(titleLabel);
+    const toolbar = node('div', undefined, 'essay-toolbar'); toolbar.setAttribute('role', 'toolbar'); toolbar.setAttribute('aria-label', 'Essay formatting');
+    const formats = [['Bold', 'bold'], ['Italic', 'italic'], ['Underline', 'underline'], ['Heading', 'formatBlock', 'h2'], ['Paragraph', 'formatBlock', 'p'], ['Quote', 'formatBlock', 'blockquote'], ['Bullets', 'insertUnorderedList'], ['Numbered list', 'insertOrderedList']];
+    for (const [label, command, argument] of formats) {
+      const control = button(label, () => { if (busy) return; restoreSelection(); document.execCommand(command, false, argument); dirty = true; rememberSelection(); });
+      on(control, 'mousedown', event => event.preventDefault()); toolbar.append(control);
+    }
+    const upload = node('input'); upload.type = 'file'; upload.accept = 'image/jpeg,image/png,image/webp'; upload.hidden = true; upload.id = 'essay-picture-input';
+    on(upload, 'change', () => { const file = upload.files[0]; upload.value = ''; if (file) uploadPicture(file); });
+    const pictureButton = button('Add picture', () => { rememberSelection(); upload.click(); });
+    on(pictureButton, 'mousedown', event => event.preventDefault()); toolbar.append(pictureButton, upload); page.append(toolbar);
+    editor = node('div', undefined, 'essay-body essay-editor'); editor.id = 'essay-editor'; editor.contentEditable = 'true'; editor.setAttribute('role', 'textbox'); editor.setAttribute('aria-multiline', 'true'); editor.setAttribute('aria-label', 'Essay text'); editor.spellcheck = true;
+    renderBlocks(editor, essay?.blocks || [{type:'paragraph', content:[]}], true); page.append(editor);
+    on(editor, 'input', () => { dirty = true; rememberSelection(); }); on(title, 'input', () => { dirty = true; });
+    on(editor, 'paste', event => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain')); dirty = true; });
+    on(editor, 'drop', event => { event.preventDefault(); if (event.dataTransfer.files[0]) uploadPicture(event.dataTransfer.files[0]); else { document.execCommand('insertText', false, event.dataTransfer.getData('text/plain')); dirty = true; } });
+    const controls = actions(page);
+    controls.append(button('Save draft', () => save('draft')), button('Publish', () => save('published')));
+    controls.append(button('Cancel', async () => {
+      if (busy || dirty && !window.confirm('Discard your unsaved changes?')) return;
+      await discardUploads(); dirty = false;
+      if (essay) showEssay(essay); else showList();
+    }));
+    title.focus();
+  }
+  on(document, 'selectionchange', rememberSelection);
+  on(window, 'beforeunload', event => { if (dirty || busy) { event.preventDefault(); event.returnValue = ''; } });
+  if (location.protocol === 'file:') { showList(); status('Editing is available on the running website.'); }
+  else Promise.all([request(writingManageMode ? '?manage=1' : ''), request('/session')]).then(([data, session]) => {
+    if (signal.aborted) return;
+    state = data; canEdit = session.canEdit;
+    const essay = requestedId && state.essays.find(item => item.id === requestedId);
+    if (essay) showEssay(essay);
+    else { showList(); if (requestedId) status('This essay is not published.'); }
+  }).catch(error => { if (!signal.aborted) { if (writingManageMode) writingManageMode = false; status(error.message); } });
+  return {
+    hasUnsavedChanges: () => dirty || busy,
+    route: () => currentRoute,
+    dispose() { if (staged.size) discardUploads().catch(() => {}); controller.abort(); }
+  };
+}
+
 const content = document.querySelector('#content');
 const labels = { home: 'Home', about: 'About me', work: 'Work', travel: 'Travel', hobbies: 'Hobbies', notes: 'Writing' };
 const panel = document.querySelector('#chat-panel');
@@ -1404,16 +1784,20 @@ content.addEventListener('click', e => {
   target?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
 });
 let lifeController = null;
+let writingController = null;
 function render() {
   lifeController?.dispose();
+  writingController?.dispose();
   lifeController = null;
+  writingController = null;
   hideSelectionAsk();
-  const section = location.hash.slice(1) || 'home';
+  const [section, essayId] = (location.hash.slice(1) || 'home').split('/');
   const current = sections[section] ? section : 'home';
   content.innerHTML = sections[current];
   content.classList.toggle('work-page', current === 'work');
   content.classList.toggle('life-content', current === 'travel');
   if (current === 'travel') lifeController = mountLife(content);
+  if (current === 'notes') writingController = mountWriting(content, essayId);
   scheduleCareerSync();
   document.querySelectorAll('nav a').forEach(a => {
     a.classList.toggle('active', a.dataset.section === current);
@@ -1543,6 +1927,9 @@ document.addEventListener('keydown', e => {
 });
 mobile.addEventListener('change', syncModal);
 window.addEventListener('hashchange', () => {
+  if (writingController?.hasUnsavedChanges() && !window.confirm('Leave this essay and discard unsaved changes?')) {
+    window.history.replaceState(null, '', writingController.route()); return;
+  }
   if (location.hash === '#content') { content.focus({ preventScroll: true }); return; }
   render(); window.scrollTo({ top: 0, behavior: 'instant' }); if (!(mobile.matches && panel.classList.contains('open'))) content.focus({ preventScroll: true });
 });

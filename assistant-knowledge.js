@@ -4,6 +4,8 @@ const profile = require('./knowledge.json');
 const sections = require('./site-content');
 const seed = require('./places.seed.json');
 const { sortLifePlaces, lifeDistinctPlaces, lifeTravelStats } = require('./place-utils');
+const writingSeed = require('./writing.seed.json');
+const { writingPlainText } = require('./writing-document');
 
 // These are our own checked-in templates, never fetched HTML or user-authored markup.
 function pageText(html) {
@@ -22,14 +24,24 @@ function placePeriod(place) {
   const start = dateLabel(place.start), end = place.current ? 'Present' : dateLabel(place.end);
   return start && end ? `${start} – ${end}` : start || end || 'Dates not supplied';
 }
-function compileKnowledge(state) {
+function compileKnowledge(state, writingState = { revision: 0, essays: writingSeed }) {
   const facts = profile.facts.map(fact => ({ ...fact }));
   facts.push({ id: 'site-about', title: 'About me', section: 'about', text: `From Ming’s About me page:\n\n${pageText(sections.about)}` });
   for (const match of sections.work.matchAll(/<section class="experience" id="experience-([a-z]+)"[\s\S]*?<\/section>/g)) {
     const company = match[1];
     facts.push({ id: `site-work-${company}`, title: `${company === 'didi' ? 'DiDi' : company === 'linkedin' ? 'LinkedIn' : company[0].toUpperCase() + company.slice(1)} — Work`, section: 'work', text: `From Ming’s Work page:\n\n${pageText(match[0])}` });
   }
-  facts.push({ id: 'site-writing', title: 'Writing', section: 'notes', text: `From Ming’s Writing page:\n\n${pageText(sections.notes)}` });
+  const essays = writingState.essays.filter(essay => essay.status === 'published');
+  const writing = facts.find(fact => fact.id === 'writing');
+  writing.text = `${essays.length ? `Ming’s published essays: ${essays.map(essay => essay.title).join('; ')}.` : 'No essays are currently published.'}\n\n${writing.text}`;
+  writing.section = 'notes';
+  for (const essay of essays) {
+    const text = writingPlainText(essay.blocks);
+    // Short excerpts keep retrieval and answers manageable even for long essays.
+    for (let offset = 0; offset < Math.max(1, text.length); offset += 3500) {
+      facts.push({ id: `essay:${essay.id}:${offset / 3500}`, title: essay.title, essayId: essay.id, section: `notes/${essay.id}`, text: `From Ming’s essay “${essay.title}”:\n\n${text.slice(offset, offset + 3500) || 'This essay contains pictures without a text description.'}` });
+    }
+  }
   facts.push({ id: 'site-hobbies', title: 'Hobbies', section: 'hobbies', text: `From Ming’s Hobbies page (placeholders; further details have not been added):\n\n${pageText(sections.hobbies)}` });
   const places = sortLifePlaces(state.places.map(place => ({ ...place, country: place.country || seed.find(item => item.lat === place.lat && item.lon === place.lon)?.country })));
   const distinct = lifeDistinctPlaces(places);
@@ -43,15 +55,15 @@ function compileKnowledge(state) {
     facts.push({ id: `place:${place.id}`, title: `${place.name} · ${period}`, section: 'travel', placeId: place.id, location: place.name, country: place.country ? new Intl.DisplayNames(['en'], { type: 'region' }).of(place.country) : '', keywords: (place.highlights || []).map(item => item.icon || '').join(' '),
       text: `${place.name}\n${period}${place.note ? `\n\nDescription from the Places entry:\n${place.note}` : ''}${highlights.length ? `\n\nHighlights:\n${highlights.map(text => `• ${text}`).join('\n')}` : ''}${place.photos?.length ? `\n\n${place.photos.length} published photo${place.photos.length === 1 ? '' : 's'}. No photo description has been supplied.` : ''}` });
   }
-  return { updated: profile.updated, placesRevision: state.revision, source: 'Ming’s supplied profile, shared page content, and published Places entries', facts };
+  return { updated: profile.updated, placesRevision: state.revision, writingRevision: writingState.revision, source: 'Ming’s supplied profile, shared page content, published Places entries, and published essays', facts };
 }
 function createKnowledgeStore(directory) {
   const file = path.join(directory, 'assistant-knowledge.json');
   let knowledge;
   return {
     file,
-    update(state) {
-      const next = compileKnowledge(state);
+    update(state, writingState) {
+      const next = compileKnowledge(state, writingState);
       // Keep current answers in sync even if a disk write fails; a restart regenerates the file.
       knowledge = next;
       const temporary = `${file}.tmp`;

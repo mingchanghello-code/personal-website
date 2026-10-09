@@ -1,0 +1,22 @@
+[
+  {
+    "id": "time-well-spent",
+    "title": "Time well spent",
+    "status": "published",
+    "createdAt": null,
+    "updatedAt": null,
+    "publishedAt": null,
+    "blocks": [
+      {"type":"paragraph","content":[{"text":"What I spend it on.\nHow I spend it."}]},
+      {"type":"paragraph","content":[{"text":"As I get older, I care a little less about money and a lot more about the time I spend working. These are a few things that matter to me."}]},
+      {"type":"heading","content":[{"text":"Make a reasonable bet. Keep moving."}]},
+      {"type":"paragraph","content":[{"text":"Every product decision is a bet, and every bet comes with some risk. I'm comfortable with that. I'd rather make progress, learn something, and keep moving than spend weeks debating because nobody wants to make the call."}]},
+      {"type":"heading","content":[{"text":"Write to make things simple."}]},
+      {"type":"paragraph","content":[{"text":"When things get messy, I write a short essay explaining what matters, what doesn't, and why. The process of writing is how I figure things out myself. Thinking through what I want to say is part of the work."}]},
+      {"type":"heading","content":[{"text":"Stay close to people who care."}]},
+      {"type":"paragraph","content":[{"text":"People come for the work, but they stay for the people. Teammates who care push each other, hold each other accountable, and challenge ideas without questioning intentions."}]},
+      {"type":"heading","content":[{"text":"Real people, real problems."}]},
+      {"type":"paragraph","content":[{"text":"I'd rather work on a product with 10,000 users I can talk to every day than one with a billion users who exist only as generic personas and numbers on a dashboard."}]}
+    ]
+  }
+]
